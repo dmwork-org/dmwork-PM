@@ -4,51 +4,49 @@
 
 ## 这是什么？
 
-这个仓库是 DMWork 产品侧的需求管理中心，所有用户反馈、Feature 需求在这里收集和评估，评审通过后才会流转到研发仓库（dmworkim / dmwork-web / dmwork-adapters）成为开发 Issue。
+这个仓库是 DMWork 产品侧的需求管理中心。所有用户反馈和 Feature 需求在这里收集和评估，评审通过后才会流转到研发仓库成为开发 Issue。
 
 **核心原则：需求池和研发池分离，研发仓库的 Issues 只有确认要做的。**
 
 ## 流程
 
 ```
-用户反馈
+用户反馈 → aoli 分析判断
   │
   ├─ 明确 Bug（报错/崩溃/UI异常）→ 直接提到对应研发仓库
   ├─ 拿不准的 → 提到本仓库
   └─ 需求/Feature → 提到本仓库
                       │
                       ▼
-              aoli 每日 Review
-              在 Issue 下出详细需求方案
-              （按改动大小分级：简版/标准/完整 PRD）
+              aoli 定时 Review（每天 2:00/14:00/17:00/21:00）
+              在 Issue 下出详细需求方案（按改动大小分级）
                       │
                       ▼
-              JOJO 在 Issue 评论区评审
-              完善需求细节，达成共识
+              aoli 通知 JOJO 评审
+              JOJO 在 Issue 评论区评审，完善需求细节
                       │
                       ▼
-              在 DMWork 找佳佳确认
+              JOJO 写"评审通过"
+              aoli 整理推送清单 → DMWork IM 私聊佳佳
                       │
               ┌───────┴───────┐
               ▼               ▼
           佳佳 ✅           佳佳 ❌
-          aoli 提到         关闭 Issue
-          研发仓库          标注原因
+          aoli 提到         aoli 关闭 Issue
+          研发仓库 Issue    标注原因
+          + 关闭 PM Issue
 ```
 
-## Issue 分类
+## Issue 标签流转
 
-| 标签 | 说明 |
-|------|------|
-| `bug` | 可能是 Bug，待确认 |
-| `feature` | 新功能需求 |
-| `enhancement` | 已有功能改进 |
-| `needs-analysis` | 待 aoli 出方案 |
-| `in-review` | 方案已出，JOJO 评审中 |
-| `ready` | 评审通过，待佳佳确认 |
-| `approved` | 佳佳确认，待提到研发仓库 |
-| `rejected` | 不做，标注原因 |
-| `transferred` | 已流转到研发仓库 |
+| 标签 | 说明 | 谁操作 |
+|------|------|--------|
+| `needs-analysis` | 刚提交，待 aoli 出方案 | 自动 |
+| `in-review` | 方案已出，JOJO 评审中 | aoli |
+| `ready` | JOJO 评审通过，待佳佳确认 | aoli |
+| `approved` | 佳佳确认，待提到研发 | aoli |
+| `rejected` | 不做，标注原因 | aoli |
+| `transferred` | 已流转到研发仓库 | aoli |
 
 ## PRD 分级标准
 
@@ -68,10 +66,19 @@
 
 | 角色 | 职责 |
 |------|------|
-| **佳佳（yejia）** | 最终审批，确认是否进研发 |
-| **aoli** | 需求收集、评估分析、出方案、提研发 Issue |
-| **JOJO** | 需求评审、产品侧分析补充 |
+| **佳佳（yejia）** | 最终审批，确认是否进入研发 |
+| **aoli** | 需求收集、评估分析、出方案、推送清单、提研发 Issue、关闭 PM Issue |
+| **JOJO** | 需求评审（在 Issue 评论区写"评审通过"） |
 | **嘉伟** | 技术约束确认、研发实现 |
+
+## 研发仓库提交规范
+
+提到研发仓库时，遵循各仓库的 Issue Template 和 [WORKFLOW.md](https://github.com/dmwork-org/dmworkim/blob/main/docs/WORKFLOW.md) 规范：
+
+- **分支**：`feat/` `fix/` `refactor/` `docs/` `ci/` 前缀
+- **Commit**：Conventional Commits（`feat:` `fix:` `refactor:` 等）
+- **PR**：标题遵循 Conventional Commits，关联 Issue（`Closes #xx`），一个 PR 只做一件事，Squash Merge
+- **提交前**：确认编译通过、检查有无重复 PR
 
 ## 关联仓库
 
