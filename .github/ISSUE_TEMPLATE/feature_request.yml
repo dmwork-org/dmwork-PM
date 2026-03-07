@@ -1,0 +1,66 @@
+name: 💡 需求/Feature
+description: 提交一个新功能需求或改进建议
+labels: ["feature", "needs-analysis"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        请描述你的需求，aoli 会进行评估分析并出方案。
+  - type: input
+    id: source
+    attributes:
+      label: 需求来源
+      description: 谁提的？从哪个渠道来的？
+      placeholder: "张三在 DMWork 产品群反馈 / 内部讨论 / 测试发现"
+    validations:
+      required: true
+  - type: dropdown
+    id: category
+    attributes:
+      label: 分类
+      options:
+        - 新功能（Feature）
+        - 功能改进（Enhancement）
+        - 体验优化（UX）
+        - 不确定
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: 需求描述
+      description: 用户想要什么？解决什么问题？
+      placeholder: "用户希望在群聊中能创建子区讨论，避免消息混乱"
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: 优先级初判
+      options:
+        - P0 - 阻断核心功能
+        - P1 - 严重影响体验
+        - P2 - 有影响可绕过
+        - P3 - 锦上添花
+        - 待评估
+    validations:
+      required: true
+  - type: dropdown
+    id: component
+    attributes:
+      label: 涉及模块
+      options:
+        - 后端（dmworkim）
+        - 前端（dmwork-web）
+        - Adapter（dmwork-adapters）
+        - 多个模块
+        - 不确定
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: 补充信息
+      description: 截图、参考链接、相关 Issue 等
+    validations:
+      required: false
