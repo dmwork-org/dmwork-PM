@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DMWork v4 — 全局搜索 ⌘K</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+/* ============================================================
+   DESIGN PHILOSOPHY:
+   ⌘K 搜索 = 产品的神经中枢
+   一个入口触达所有内容：聊天、联系人、群组、文件
+   开发者熟悉的 command palette 模式
+   ============================================================ */
+
+:root {
+  /* Brand — 和 chat.html 完全一致 */
+  --brand-from: #7C5CFC;
+  --brand-to: #00D4AA;
+  --brand-gradient: linear-gradient(135deg, var(--brand-from), var(--brand-to));
+  --brand-glow: rgba(124, 92, 252, 0.3);
+  --brand-primary: #7C5CFC;
+
+  /* 背景层级 */
+  --bg-deep: #111318;
+  --bg-base: #171921;
+  --bg-surface: #1E212B;
+  --bg-elevated: #262A36;
+  --bg-hover: #2E3240;
+  --bg-active: #363B4A;
+
+  /* 文字 */
+  --text-primary: #E4E6ED;
+  --text-secondary: #9CA1B3;
+  --text-tertiary: #7A7F96;
+  --text-accent: #B0A4FF;
+
+  /* 边框 */
+  --border-subtle: rgba(255,255,255,0.04);
+  --border-default: rgba(255,255,255,0.07);
+  --border-glow: rgba(124,92,252,0.2);
+
+  /* AI 专属 */
+  --ai-surface: rgba(124,92,252,0.04);
+  --ai-border: rgba(124,92,252,0.12);
+
+  /* 语义色 */
+  --green: #00D4AA;
+  --amber: #FFAD33;
+  --red: #FF5C72;
+  --blue: #5C9AFF;
+
+  /* 字体 */
+  --font-sans: 'Inter', -apple-system, 'PingFang SC', sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
+
+  /* 间距 */
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px;
+  --sp-5: 20px; --sp-6: 24px; --sp-8: 32px; --sp-10: 40px;
+
+  /* 圆角 */
+  --r-sm: 6px; --r-md: 10px; --r-lg: 14px; --r-xl: 20px; --r-full: 9999px;
+
+  /* 动效 */
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur: 200ms;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font: 400 14px/1.5 var(--font-sans);
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  height: 100vh;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ============================================================
+   BACKGROUND — 模拟 app 在搜索弹窗下面
+   ============================================================ */
+.app-bg {
+  position: fixed;
+  inset: 0;
+  display: flex;
+}
+
+.app-bg-nav {
+  width: 60px;
+  background: var(--bg-deep);
+  border-right: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 20px;
+  gap: 8px;
+}
+
+.app-bg-nav .fake-logo {
+  width: 34px; height: 34px;
+  border-radius: var(--r-md);
+  background: var(--brand-gradient);
+  margin-bottom: 24px;
+  opacity: 0.6;
+}
+
+.app-bg-nav .fake-icon {
+  width: 28px; height: 28px;
+  border-radius: var(--r-sm);
+  background: var(--bg-elevated);
+  opacity: 0.4;
+}
+
+.app-bg-sidebar {
+  width: 280px;
+  background: var(--bg-base);
+  border-right: 1px solid var(--border-subtle);
+  padding: 20px 16px;
+}
+
+.fake-search-bar {
+  height: 32px;
+  border-radius: var(--r-md);
+  background: var(--bg-surface);
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.fake-conv {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px;
+  border-radius: var(--r-md);
+  margin-bottom: 2px;
+}
+
+.fake-conv .fake-ava {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  opacity: 0.3;
+}
+
+.fake-conv .fake-ava.ai {
+  border-radius: var(--r-sm);
+}
+
+.fake-conv .fake-lines {
+  flex: 1;
+}
+
+.fake-line {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--bg-elevated);
+  opacity: 0.3;
+  margin-bottom: 6px;
+}
+
+.fake-line:last-child { margin-bottom: 0; width: 60%; }
+
+.app-bg-main {
+  flex: 1;
+  background: var(--bg-surface);
+}
+
+/* ============================================================
+   OVERLAY — 毛玻璃遮罩
+   ============================================================ */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 100;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 12vh;
+}
+
+/* ============================================================
+   SEARCH MODAL
+   ============================================================ */
+.search-modal {
+  width: 100%;
+  max-width: 600px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: var(--r-xl);
+  overflow: hidden;
+  box-shadow: 0 16px 64px rgba(0,0,0,0.5), 0 0 0 1px rgba(124,92,252,0.06);
+  animation: modal-enter 0.25s var(--ease);
+  display: flex;
+  flex-direction: column;
+  max-height: 520px;
+}
+
+@keyframes modal-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-12px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Search header */
+.search-header {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-4) var(--sp-5);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.search-icon {
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+
+.search-icon svg {
+  width: 18px; height: 18px;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.search-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font: 400 15px var(--font-sans);
+  color: var(--text-primary);
+  outline: none;
+}
+
+.search-input::placeholder {
+  color: var(--text-tertiary);
+}
+
+.search-kbd {
+  font: 500 10px var(--font-mono);
+  color: var(--text-tertiary);
+  background: var(--bg-hover);
+  padding: 2px 6px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+
+.search-close {
+  width: 28px; height: 28px;
+  border-radius: var(--r-sm);
+  border: none;
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--dur);
+  flex-shrink: 0;
+}
+
+.search-close:hover {
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+}
+
+.search-close svg {
+  width: 16px; height: 16px;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  fill: none;
+  stroke-linecap: round;
+}
+
+/* Tabs */
+.search-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 0 var(--sp-5);
+}
+
+.search-tab {
+  padding: var(--sp-2) var(--sp-4);
+  font: 500 13px var(--font-sans);
+  color: var(--text-tertiary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  position: relative;
+  transition: color var(--dur);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+}
+
+.search-tab:hover {
+  color: var(--text-secondary);
+}
+
+.search-tab.active {
+  color: var(--text-primary);
+}
+
+.search-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: var(--sp-3);
+  right: var(--sp-3);
+  height: 2px;
+  background: var(--brand-gradient);
+  border-radius: 1px;
+}
+
+.search-tab .tab-icon {
+  width: 14px; height: 14px;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex-shrink: 0;
+}
+
+.tab-count {
+  font: 600 10px var(--font-mono);
+  color: var(--text-accent);
+  background: rgba(124,92,252,0.1);
+  padding: 0 5px;
+  border-radius: var(--r-full);
+  margin-left: 2px;
+}
+
+/* Search body */
+.search-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--sp-2) 0;
+}
+
+.search-body::-webkit-scrollbar { width: 4px; }
+.search-body::-webkit-scrollbar-track { background: transparent; }
+.search-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
+
+/* Section label in results */
+.result-section {
+  font: 600 11px var(--font-sans);
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: var(--sp-2) var(--sp-5) var(--sp-1);
+}
+
+/* Result items */
+.result-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-5);
+  cursor: pointer;
+  transition: background var(--dur);
+}
+
+.result-item:hover {
+  background: var(--bg-hover);
+}
+
+.result-item.selected {
+  background: var(--bg-active);
+}
+
+/* Avatars in results — 遵循身份规则 */
+.result-ava {
+  width: 34px; height: 34px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: white;
+  position: relative;
+}
+
+.result-ava.human {
+  border-radius: 50%;
+}
+
+.result-ava.ai {
+  border-radius: var(--r-sm);
+}
+
+.result-ava.group {
+  border-radius: var(--r-md);
+}
+
+/* AI 角标 */
+.result-ava .ai-mark {
+  position: absolute;
+  bottom: -2px; right: -2px;
+  width: 14px; height: 14px;
+  border-radius: 4px;
+  background: var(--brand-gradient);
+  border: 2px solid var(--bg-elevated);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.result-ava .ai-mark svg {
+  width: 7px; height: 7px;
+  stroke: white;
+  stroke-width: 2.5;
+  fill: none;
+}
+
+/* Online dot */
+.result-ava .online {
+  position: absolute;
+  bottom: -1px; right: -1px;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--green);
+  border: 2px solid var(--bg-elevated);
+}
+
+.result-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.result-name {
+  font: 500 13.5px var(--font-sans);
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.result-name .ai-badge {
+  font: 700 8px var(--font-sans);
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: var(--brand-gradient);
+  color: white;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+
+.result-preview {
+  font: 400 12.5px var(--font-sans);
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 1px;
+}
+
+.result-preview mark {
+  background: rgba(124,92,252,0.2);
+  color: var(--text-accent);
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
+.result-meta {
+  font: 400 11px var(--font-mono);
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+
+/* File results */
+.result-file-icon {
+  width: 34px; height: 34px;
+  border-radius: var(--r-md);
+  background: var(--bg-hover);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.result-file-size {
+  font: 400 10px var(--font-mono);
+  color: var(--text-tertiary);
+}
+
+/* Empty state */
+.empty-state {
+  text-align: center;
+  padding: var(--sp-10) var(--sp-6);
+}
+
+.empty-icon {
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  background: var(--ai-surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto var(--sp-4);
+  position: relative;
+}
+
+.empty-icon::before {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  border-radius: 50%;
+  border: 1px dashed var(--border-default);
+  animation: spin-slow 20s linear infinite;
+}
+
+@keyframes spin-slow {
+  to { transform: rotate(360deg); }
+}
+
+.empty-icon svg {
+  width: 22px; height: 22px;
+  stroke: var(--brand-primary);
+  stroke-width: 1.5;
+  fill: none;
+  stroke-linecap: round;
+  opacity: 0.5;
+}
+
+.empty-title {
+  font: 500 14px var(--font-sans);
+  color: var(--text-secondary);
+  margin-bottom: var(--sp-1);
+}
+
+.empty-desc {
+  font: 400 12px/1.6 var(--font-sans);
+  color: var(--text-tertiary);
+  max-width: 260px;
+  margin: 0 auto;
+}
+
+/* Search footer */
+.search-footer {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: var(--sp-2) var(--sp-5);
+  border-top: 1px solid var(--border-subtle);
+  background: rgba(255,255,255,0.01);
+}
+
+.footer-hint {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font: 400 11px var(--font-mono);
+  color: var(--text-tertiary);
+}
+
+.footer-hint kbd {
+  font: 500 10px var(--font-mono);
+  background: var(--bg-hover);
+  padding: 1px 4px;
+  border-radius: 3px;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-tertiary);
+}
+
+.footer-right {
+  margin-left: auto;
+  font: 400 11px var(--font-mono);
+  color: var(--text-tertiary);
+}
+
+/* ============================================================
+   LIGHT THEME
+   ============================================================ */
+[data-theme="light"] {
+  --bg-deep: #F0F1F5;
+  --bg-base: #F7F8FA;
+  --bg-surface: #FFFFFF;
+  --bg-elevated: #F0F1F5;
+  --bg-hover: #EAEBF0;
+  --bg-active: #E2E3EA;
+
+  --text-primary: #1A1C24;
+  --text-secondary: #5C6070;
+  --text-tertiary: #9498A8;
+  --text-accent: #6B4FD8;
+
+  --border-subtle: rgba(0,0,0,0.05);
+  --border-default: rgba(0,0,0,0.08);
+  --border-glow: rgba(124,92,252,0.25);
+
+  --ai-surface: rgba(124,92,252,0.03);
+  --ai-border: rgba(124,92,252,0.12);
+
+  --green: #00B894;
+  --red: #E5405E;
+}
+
+[data-theme="light"] .overlay {
+  background: rgba(0,0,0,0.3);
+}
+
+[data-theme="light"] .search-modal {
+  background: white;
+  border-color: rgba(0,0,0,0.08);
+  box-shadow: 0 16px 64px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.04);
+}
+
+[data-theme="light"] .result-item:hover {
+  background: #F0F1F5;
+}
+
+[data-theme="light"] .result-item.selected {
+  background: #E8E9EE;
+}
+
+[data-theme="light"] .result-ava .ai-mark {
+  border-color: white;
+}
+
+[data-theme="light"] .result-ava .online {
+  border-color: white;
+}
+
+[data-theme="light"] .result-preview mark {
+  background: rgba(124,92,252,0.12);
+}
+
+[data-theme="light"] .search-footer {
+  background: rgba(0,0,0,0.01);
+}
+
+[data-theme="light"] .app-bg-nav {
+  background: #E8E9EE;
+}
+
+[data-theme="light"] .app-bg-sidebar {
+  background: #F7F8FA;
+}
+
+[data-theme="light"] .app-bg-main {
+  background: white;
+}
+
+/* Theme FAB */
+.theme-fab {
+  position: fixed;
+  bottom: 20px; right: 20px;
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  color: var(--text-secondary);
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  z-index: 1000;
+  transition: transform 0.2s;
+}
+
+.theme-fab:hover { transform: scale(1.1); }
+</style>
+</head>
+<body>
+
+<!-- Simulated app background -->
+<div class="app-bg">
+  <div class="app-bg-nav">
+    <div class="fake-logo"></div>
+    <div class="fake-icon"></div>
+    <div class="fake-icon"></div>
+    <div class="fake-icon"></div>
+  </div>
+  <div class="app-bg-sidebar">
+    <div class="fake-search-bar"></div>
+    <div class="fake-conv">
+      <div class="fake-ava" style="background:#6366F1;"></div>
+      <div class="fake-lines"><div class="fake-line" style="width:70%;"></div><div class="fake-line"></div></div>
+    </div>
+    <div class="fake-conv">
+      <div class="fake-ava ai" style="background:linear-gradient(135deg,#7C5CFC,#5C9AFF); border-radius:var(--r-sm);"></div>
+      <div class="fake-lines"><div class="fake-line" style="width:50%;"></div><div class="fake-line"></div></div>
+    </div>
+    <div class="fake-conv">
+      <div class="fake-ava" style="background:#0EA5E9;"></div>
+      <div class="fake-lines"><div class="fake-line" style="width:80%;"></div><div class="fake-line"></div></div>
+    </div>
+    <div class="fake-conv">
+      <div class="fake-ava ai" style="background:linear-gradient(135deg,#F59E0B,#EF4444); border-radius:var(--r-sm);"></div>
+      <div class="fake-lines"><div class="fake-line" style="width:65%;"></div><div class="fake-line"></div></div>
+    </div>
+    <div class="fake-conv">
+      <div class="fake-ava" style="background:#059669;"></div>
+      <div class="fake-lines"><div class="fake-line" style="width:55%;"></div><div class="fake-line"></div></div>
+    </div>
+  </div>
+  <div class="app-bg-main"></div>
+</div>
+
+<!-- Overlay -->
+<div class="overlay">
+
+  <!-- Search modal -->
+  <div class="search-modal" id="searchModal">
+    <!-- Header -->
+    <div class="search-header">
+      <div class="search-icon">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </div>
+      <input class="search-input" type="text" placeholder="搜索消息、联系人、群组或文件…" id="searchInput" autofocus>
+      <span class="search-kbd">⌘K</span>
+      <button class="search-close">
+        <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <!-- Tabs -->
+    <div class="search-tabs">
+      <button class="search-tab active" onclick="switchSearchTab(this, 'chat')">
+        <svg class="tab-icon" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> 聊天
+      </button>
+      <button class="search-tab" onclick="switchSearchTab(this, 'contacts')">
+        <svg class="tab-icon" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> 联系人
+      </button>
+      <button class="search-tab" onclick="switchSearchTab(this, 'groups')">
+        <svg class="tab-icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> 群组
+      </button>
+      <button class="search-tab" onclick="switchSearchTab(this, 'files')">
+        <svg class="tab-icon" viewBox="0 0 24 24"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg> 文件
+      </button>
+    </div>
+
+    <!-- Body -->
+    <div class="search-body" id="searchBody">
+      <!-- Empty state (default) -->
+      <div class="empty-state" id="emptyState">
+        <div class="empty-icon">
+          <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <div class="empty-title">搜索聊天记录</div>
+        <div class="empty-desc">输入关键词查找历史消息，支持搜索文字、链接和代码片段</div>
+      </div>
+
+      <!-- Results (hidden by default, shown on input) -->
+      <div id="results" style="display:none;">
+        <div class="result-section">聊天记录</div>
+
+        <!-- Human message result -->
+        <div class="result-item selected">
+          <div class="result-ava human" style="background:#0EA5E9;">J</div>
+          <div class="result-info">
+            <div class="result-name">JoJo</div>
+            <div class="result-preview">昨天那个<mark>限流</mark>的问题我看了下日志</div>
+          </div>
+          <div class="result-meta">09:30</div>
+        </div>
+
+        <!-- AI message result -->
+        <div class="result-item">
+          <div class="result-ava ai" style="background:linear-gradient(135deg,#7C5CFC,#5C9AFF);">
+            T
+            <span class="ai-mark"><svg viewBox="0 0 24 24" stroke-linecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></span>
+          </div>
+          <div class="result-info">
+            <div class="result-name">Thomas AI <span class="ai-badge">AI</span></div>
+            <div class="result-preview">webhook 并发<mark>限流</mark>建议用 p-limit 控制在 10 以内</div>
+          </div>
+          <div class="result-meta">09:32</div>
+        </div>
+
+        <!-- Group message result -->
+        <div class="result-item">
+          <div class="result-ava group" style="background:linear-gradient(135deg,#6366F1,#8B5CF6);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+          </div>
+          <div class="result-info">
+            <div class="result-name">AI 工作群</div>
+            <div class="result-preview">叶佳: 这个<mark>限流</mark>方案可以先上线测试</div>
+          </div>
+          <div class="result-meta">昨天</div>
+        </div>
+
+        <div class="result-section" style="margin-top: var(--sp-2);">联系人</div>
+
+        <!-- Contact result with online -->
+        <div class="result-item">
+          <div class="result-ava human" style="background:#D97706;">
+            叶
+            <span class="online"></span>
+          </div>
+          <div class="result-info">
+            <div class="result-name">叶佳</div>
+            <div class="result-preview" style="color:var(--green); font-size:11px;">在线</div>
+          </div>
+        </div>
+
+        <!-- AI contact result -->
+        <div class="result-item">
+          <div class="result-ava ai" style="background:linear-gradient(135deg,#F59E0B,#EF4444);">
+            B
+            <span class="ai-mark"><svg viewBox="0 0 24 24" stroke-linecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></span>
+          </div>
+          <div class="result-info">
+            <div class="result-name">BotFather <span class="ai-badge">AI</span></div>
+            <div class="result-preview">GPT-4o · 群管理机器人</div>
+          </div>
+        </div>
+
+        <div class="result-section" style="margin-top: var(--sp-2);">文件</div>
+
+        <!-- File result -->
+        <div class="result-item">
+          <div class="result-file-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg></div>
+          <div class="result-info">
+            <div class="result-name">webhook-<mark>限流</mark>-方案.md</div>
+            <div class="result-preview"><span class="result-file-size">2.4 KB · Thomas AI 上传</span></div>
+          </div>
+          <div class="result-meta">昨天</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="search-footer">
+      <div class="footer-hint"><kbd>↑</kbd><kbd>↓</kbd> 导航</div>
+      <div class="footer-hint"><kbd>↵</kbd> 打开</div>
+      <div class="footer-hint"><kbd>Tab</kbd> 切换分类</div>
+      <div class="footer-right">⌘K 唤起搜索</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Theme toggle -->
+<button class="theme-fab" onclick="toggleTheme()" title="切换主题">🌙</button>
+
+<script>
+// Tab switching
+function switchSearchTab(el, tab) {
+  document.querySelectorAll('.search-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// Show results when typing
+const input = document.getElementById('searchInput');
+const empty = document.getElementById('emptyState');
+const results = document.getElementById('results');
+
+input.addEventListener('input', function() {
+  if (this.value.length > 0) {
+    empty.style.display = 'none';
+    results.style.display = 'block';
+  } else {
+    empty.style.display = 'block';
+    results.style.display = 'none';
+  }
+});
+
+// Auto-type demo
+setTimeout(() => {
+  const text = '限流';
+  let i = 0;
+  const type = () => {
+    if (i < text.length) {
+      input.value += text[i];
+      input.dispatchEvent(new Event('input'));
+      i++;
+      setTimeout(type, 120);
+    }
+  };
+  type();
+}, 800);
+
+// Theme toggle
+function toggleTheme() {
+  const html = document.documentElement;
+  const fab = document.querySelector('.theme-fab');
+  if (html.getAttribute('data-theme') === 'light') {
+    html.removeAttribute('data-theme');
+    fab.textContent = '🌙';
+  } else {
+    html.setAttribute('data-theme', 'light');
+    fab.textContent = '🌞';
+  }
+}
+</script>
+</body>
+</html>
