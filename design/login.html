@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DMWork v4 — 登录</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+/* ============================================================
+   DESIGN PHILOSOPHY:
+   登录页 = 产品的第一印象
+   要传达：这不是一个普通 IM，这是 AI-native 的工作台
+   暗色 + 品牌渐变 + 微妙的 AI 氛围
+   ============================================================ */
+
+:root {
+  /* Brand — 和 chat.html 完全一致 */
+  --brand-from: #7C5CFC;
+  --brand-to: #00D4AA;
+  --brand-gradient: linear-gradient(135deg, var(--brand-from), var(--brand-to));
+  --brand-glow: rgba(124, 92, 252, 0.3);
+  --brand-primary: #7C5CFC;
+
+  /* 背景层级 */
+  --bg-deep: #111318;
+  --bg-base: #171921;
+  --bg-surface: #1E212B;
+  --bg-elevated: #262A36;
+  --bg-hover: #2E3240;
+  --bg-active: #363B4A;
+
+  /* 文字 */
+  --text-primary: #E4E6ED;
+  --text-secondary: #9CA1B3;
+  --text-tertiary: #7A7F96;
+  --text-accent: #B0A4FF;
+
+  /* 边框 */
+  --border-subtle: rgba(255,255,255,0.04);
+  --border-default: rgba(255,255,255,0.07);
+  --border-glow: rgba(124,92,252,0.2);
+
+  /* AI 专属 */
+  --ai-surface: rgba(124,92,252,0.04);
+  --ai-border: rgba(124,92,252,0.12);
+
+  /* 语义色 */
+  --green: #00D4AA;
+  --red: #FF5C72;
+
+  /* 字体 */
+  --font-sans: 'Inter', -apple-system, 'PingFang SC', sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
+
+  /* 间距 */
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px;
+  --sp-5: 20px; --sp-6: 24px; --sp-8: 32px; --sp-10: 40px;
+
+  /* 圆角 */
+  --r-sm: 6px; --r-md: 10px; --r-lg: 14px; --r-xl: 20px; --r-full: 9999px;
+
+  /* 动效 */
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur: 200ms;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font: 400 14px/1.5 var(--font-sans);
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+/* ============================================================
+   BACKGROUND ATMOSPHERE
+   微妙的 AI 存在感 — 光晕 + 网格 + 粒子
+   ============================================================ */
+.bg-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* 网格 — 开发者/工作台感 */
+.bg-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--border-subtle) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border-subtle) 1px, transparent 1px);
+  background-size: 60px 60px;
+  opacity: 0.5;
+  mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 20%, transparent 70%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 20%, transparent 70%);
+}
+
+/* 品牌光晕 */
+.bg-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(100px);
+}
+
+.bg-orb-1 {
+  width: 500px; height: 500px;
+  background: radial-gradient(circle, var(--brand-from), transparent 70%);
+  top: -200px; right: -100px;
+  opacity: 0.08;
+  animation: orb-drift 20s ease-in-out infinite;
+}
+
+.bg-orb-2 {
+  width: 400px; height: 400px;
+  background: radial-gradient(circle, var(--brand-to), transparent 70%);
+  bottom: -150px; left: -80px;
+  opacity: 0.06;
+  animation: orb-drift 24s ease-in-out infinite reverse;
+}
+
+.bg-orb-3 {
+  width: 200px; height: 200px;
+  background: radial-gradient(circle, var(--brand-from), transparent 70%);
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0.03;
+  animation: orb-pulse 8s ease-in-out infinite;
+}
+
+@keyframes orb-drift {
+  0%, 100% { transform: translate(0, 0); }
+  33% { transform: translate(30px, -20px); }
+  66% { transform: translate(-20px, 15px); }
+}
+
+@keyframes orb-pulse {
+  0%, 100% { opacity: 0.03; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 0.06; transform: translate(-50%, -50%) scale(1.3); }
+}
+
+/* 浮动粒子 */
+.particle {
+  position: absolute;
+  width: 3px; height: 3px;
+  border-radius: 50%;
+  background: var(--brand-from);
+  opacity: 0;
+  animation: particle-float linear infinite;
+}
+
+@keyframes particle-float {
+  0% { opacity: 0; transform: translateY(100vh) scale(0); }
+  10% { opacity: 0.15; }
+  90% { opacity: 0.15; }
+  100% { opacity: 0; transform: translateY(-20px) scale(1); }
+}
+
+/* ============================================================
+   LOGIN CARD
+   ============================================================ */
+.login-wrapper {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 420px;
+  padding: 0 var(--sp-6);
+}
+
+.login-card {
+  background: var(--bg-base);
+  border: 1px solid var(--border-default);
+  border-radius: var(--r-xl);
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.4), 0 0 80px rgba(124,92,252,0.04);
+}
+
+/* 顶部品牌渐变线 — 和 AI 面板一样的签名 */
+.login-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--brand-gradient);
+  opacity: 0.8;
+}
+
+.login-content {
+  padding: var(--sp-10) var(--sp-8) var(--sp-8);
+}
+
+/* Logo — 方形渐变，和 nav-logo 一致 */
+.login-logo {
+  width: 52px; height: 52px;
+  border-radius: var(--r-lg);
+  background: var(--brand-gradient);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto var(--sp-5);
+  position: relative;
+}
+
+.login-logo::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: calc(var(--r-lg) + 4px);
+  background: var(--brand-gradient);
+  opacity: 0.12;
+  filter: blur(12px);
+  z-index: -1;
+}
+
+.login-logo svg {
+  width: 24px; height: 24px;
+  fill: white;
+}
+
+.login-brand {
+  text-align: center;
+  margin-bottom: var(--sp-8);
+}
+
+.login-brand h1 {
+  font: 700 22px/1.2 var(--font-sans);
+  letter-spacing: -0.02em;
+  margin-bottom: var(--sp-1);
+}
+
+.login-brand p {
+  font: 400 13px/1.5 var(--font-sans);
+  color: var(--text-tertiary);
+}
+
+.login-brand .accent {
+  background: var(--brand-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 500;
+}
+
+/* Tab 切换器 */
+.login-tabs {
+  display: flex;
+  background: var(--bg-deep);
+  border-radius: var(--r-md);
+  padding: 3px;
+  margin-bottom: var(--sp-6);
+}
+
+.login-tab {
+  flex: 1;
+  padding: 9px 0;
+  font: 500 14px var(--font-sans);
+  color: var(--text-tertiary);
+  background: transparent;
+  border: none;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: all var(--dur) var(--ease);
+}
+
+.login-tab.active {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.login-tab:not(.active):hover {
+  color: var(--text-secondary);
+}
+
+/* 表单 */
+.form-group {
+  margin-bottom: var(--sp-4);
+}
+
+.form-label {
+  display: block;
+  font: 500 12px/1 var(--font-sans);
+  color: var(--text-secondary);
+  margin-bottom: var(--sp-2);
+}
+
+.form-input {
+  width: 100%;
+  height: 40px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--border-default);
+  background: var(--bg-surface);
+  padding: 0 var(--sp-3);
+  font: 400 14px var(--font-sans);
+  color: var(--text-primary);
+  outline: none;
+  transition: all var(--dur) var(--ease);
+}
+
+.form-input::placeholder {
+  color: var(--text-tertiary);
+}
+
+.form-input:focus {
+  border-color: var(--border-glow);
+  background: var(--bg-elevated);
+  box-shadow: 0 0 0 3px rgba(124,92,252,0.06);
+}
+
+/* 密码输入框包装 */
+.input-password-wrap {
+  position: relative;
+}
+
+.input-password-wrap .form-input {
+  padding-right: 40px;
+}
+
+.password-toggle {
+  position: absolute;
+  right: var(--sp-2);
+  top: 50%;
+  transform: translateY(-50%);
+  width: 28px; height: 28px;
+  border-radius: var(--r-sm);
+  border: none;
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--dur);
+}
+
+.password-toggle:hover {
+  color: var(--text-secondary);
+  background: var(--bg-hover);
+}
+
+.password-toggle svg {
+  width: 16px; height: 16px;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* 验证码行 */
+.verify-row {
+  display: flex;
+  gap: var(--sp-2);
+}
+
+.verify-row .form-input {
+  flex: 1;
+}
+
+.verify-btn {
+  height: 40px;
+  padding: 0 var(--sp-4);
+  border-radius: var(--r-md);
+  border: 1px solid var(--border-glow);
+  background: var(--ai-surface);
+  color: var(--text-accent);
+  font: 500 13px var(--font-sans);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--dur) var(--ease);
+}
+
+.verify-btn:hover {
+  background: rgba(124,92,252,0.08);
+  border-color: rgba(124,92,252,0.3);
+}
+
+.verify-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 主按钮 — 品牌渐变 */
+.btn-primary {
+  width: 100%;
+  height: 44px;
+  border-radius: var(--r-md);
+  border: none;
+  background: var(--brand-gradient);
+  color: white;
+  font: 600 15px var(--font-sans);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s var(--ease);
+  margin-top: var(--sp-6);
+}
+
+.btn-primary::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(124,92,252,0.3), 0 0 40px rgba(124,92,252,0.1);
+}
+
+.btn-primary:hover::before {
+  opacity: 1;
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+/* 分割线 */
+.divider {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin: var(--sp-5) 0;
+}
+
+.divider::before, .divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border-subtle);
+}
+
+.divider span {
+  font: 400 12px var(--font-sans);
+  color: var(--text-tertiary);
+}
+
+/* 扫码登录按钮 */
+.btn-scan {
+  width: 100%;
+  height: 40px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--border-default);
+  background: transparent;
+  color: var(--text-secondary);
+  font: 500 13px var(--font-sans);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  transition: all var(--dur) var(--ease);
+}
+
+.btn-scan:hover {
+  border-color: var(--border-glow);
+  background: var(--ai-surface);
+  color: var(--text-accent);
+}
+
+.btn-scan svg {
+  width: 16px; height: 16px;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* 底部链接 */
+.login-footer {
+  text-align: center;
+  margin-top: var(--sp-5);
+}
+
+.login-footer p {
+  font: 400 12px/1.8 var(--font-sans);
+  color: var(--text-tertiary);
+}
+
+.login-footer a {
+  color: var(--text-accent);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color var(--dur);
+}
+
+.login-footer a:hover {
+  color: var(--brand-from);
+}
+
+/* 注册表单（默认隐藏） */
+.form-register { display: none; }
+
+/* ============================================================
+   BOTTOM BAR — Android 下载
+   ============================================================ */
+.download-bar {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: 48px;
+  background: var(--bg-base);
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  z-index: 10;
+}
+
+.download-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 6px 16px;
+  border-radius: var(--r-full);
+  border: 1px solid var(--border-glow);
+  background: var(--ai-surface);
+  color: var(--text-accent);
+  font: 500 12px var(--font-sans);
+  cursor: pointer;
+  text-decoration: none;
+  transition: all var(--dur) var(--ease);
+}
+
+.download-btn:hover {
+  background: rgba(124,92,252,0.1);
+  border-color: rgba(124,92,252,0.3);
+  transform: translateY(-1px);
+}
+
+.download-btn svg {
+  width: 14px; height: 14px;
+  stroke: currentColor;
+  stroke-width: 2;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ============================================================
+   THEME — 亮色
+   ============================================================ */
+[data-theme="light"] {
+  --bg-deep: #F0F1F5;
+  --bg-base: #F7F8FA;
+  --bg-surface: #FFFFFF;
+  --bg-elevated: #F0F1F5;
+  --bg-hover: #EAEBF0;
+  --bg-active: #E2E3EA;
+
+  --text-primary: #1A1C24;
+  --text-secondary: #5C6070;
+  --text-tertiary: #9498A8;
+  --text-accent: #6B4FD8;
+
+  --border-subtle: rgba(0,0,0,0.05);
+  --border-default: rgba(0,0,0,0.08);
+  --border-glow: rgba(124,92,252,0.25);
+
+  --ai-surface: rgba(124,92,252,0.03);
+  --ai-border: rgba(124,92,252,0.12);
+
+  --green: #00B894;
+  --red: #E5405E;
+}
+
+[data-theme="light"] .login-card {
+  box-shadow: 0 8px 40px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.04);
+}
+
+[data-theme="light"] .bg-orb-1 { opacity: 0.04; }
+[data-theme="light"] .bg-orb-2 { opacity: 0.03; }
+[data-theme="light"] .bg-grid { opacity: 0.3; }
+[data-theme="light"] .particle { background: var(--brand-from); }
+
+[data-theme="light"] .login-tab.active {
+  background: white;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+[data-theme="light"] .form-input:focus {
+  background: white;
+}
+
+[data-theme="light"] .download-bar {
+  background: #F7F8FA;
+  border-top-color: rgba(0,0,0,0.06);
+}
+
+/* Theme FAB */
+.theme-fab {
+  position: fixed;
+  bottom: 64px; right: 20px;
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  color: var(--text-secondary);
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  z-index: 1000;
+  transition: transform 0.2s;
+}
+
+.theme-fab:hover { transform: scale(1.1); }
+
+/* ============================================================
+   ANIMATIONS
+   ============================================================ */
+.login-card {
+  animation: card-enter 0.5s var(--ease);
+}
+
+@keyframes card-enter {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 480px) {
+  .login-wrapper {
+    padding: 0 var(--sp-4);
+  }
+  .login-content {
+    padding: var(--sp-8) var(--sp-5) var(--sp-6);
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- Background atmosphere -->
+<div class="bg-layer">
+  <div class="bg-grid"></div>
+  <div class="bg-orb bg-orb-1"></div>
+  <div class="bg-orb bg-orb-2"></div>
+  <div class="bg-orb bg-orb-3"></div>
+</div>
+
+<!-- Login card -->
+<div class="login-wrapper">
+  <div class="login-card">
+    <div class="login-content">
+
+      <!-- Logo -->
+      <div class="login-logo">
+        <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+      </div>
+
+      <!-- Brand -->
+      <div class="login-brand">
+        <h1>DMWork</h1>
+        <p><span class="accent">AI Agent</span> 时代的即时通讯</p>
+      </div>
+
+      <!-- Tabs -->
+      <div class="login-tabs">
+        <button class="login-tab active" onclick="switchTab('login')">登录</button>
+        <button class="login-tab" onclick="switchTab('register')">注册</button>
+      </div>
+
+      <!-- Login form -->
+      <form class="form-login" id="formLogin">
+        <div class="form-group">
+          <label class="form-label">邮箱 / 用户名</label>
+          <input class="form-input" type="text" placeholder="输入邮箱或用户名" autocomplete="username">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">密码</label>
+          <div class="input-password-wrap">
+            <input class="form-input" type="password" placeholder="输入密码" autocomplete="current-password" id="loginPwd">
+            <button type="button" class="password-toggle" onclick="togglePwd('loginPwd')">
+              <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-primary">登录</button>
+      </form>
+
+      <!-- Register form (hidden) -->
+      <form class="form-register" id="formRegister">
+        <div class="form-group">
+          <label class="form-label">邮箱</label>
+          <input class="form-input" type="email" placeholder="输入邮箱地址" autocomplete="email">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">验证码</label>
+          <div class="verify-row">
+            <input class="form-input" type="text" placeholder="输入验证码" autocomplete="one-time-code">
+            <button type="button" class="verify-btn" id="verifyBtn" onclick="sendCode()">发送验证码</button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">昵称</label>
+          <input class="form-input" type="text" placeholder="给自己取个名字" autocomplete="name">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">密码</label>
+          <div class="input-password-wrap">
+            <input class="form-input" type="password" placeholder="设置密码（至少 8 位）" autocomplete="new-password" id="regPwd">
+            <button type="button" class="password-toggle" onclick="togglePwd('regPwd')">
+              <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-primary">注册</button>
+      </form>
+
+      <!-- Divider -->
+      <div class="divider"><span>或</span></div>
+
+      <!-- Scan login -->
+      <button class="btn-scan">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3h-3z M20 14v3h-3 M14 20h3 M20 20h0"/></svg>
+        扫码登录
+      </button>
+
+      <!-- Footer links -->
+      <div class="login-footer">
+        <p>没有账号？<a href="#" onclick="switchTab('register')">注册</a></p>
+        <p><a href="#">忘记密码</a></p>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Download bar -->
+<div class="download-bar">
+  <a href="#" class="download-btn">
+    <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    下载 Android 客户端
+  </a>
+</div>
+
+<!-- Theme toggle -->
+<button class="theme-fab" onclick="toggleTheme()" title="切换主题">🌙</button>
+
+<script>
+// Tab switching
+function switchTab(tab) {
+  const tabs = document.querySelectorAll('.login-tab');
+  const formLogin = document.getElementById('formLogin');
+  const formRegister = document.getElementById('formRegister');
+
+  tabs.forEach(t => t.classList.remove('active'));
+
+  if (tab === 'login') {
+    tabs[0].classList.add('active');
+    formLogin.style.display = 'block';
+    formRegister.style.display = 'none';
+  } else {
+    tabs[1].classList.add('active');
+    formLogin.style.display = 'none';
+    formRegister.style.display = 'block';
+  }
+}
+
+// Password toggle
+function togglePwd(id) {
+  const input = document.getElementById(id);
+  input.type = input.type === 'password' ? 'text' : 'password';
+}
+
+// Verify code countdown
+function sendCode() {
+  const btn = document.getElementById('verifyBtn');
+  let sec = 60;
+  btn.disabled = true;
+  btn.textContent = sec + 's';
+  const timer = setInterval(() => {
+    sec--;
+    btn.textContent = sec + 's';
+    if (sec <= 0) {
+      clearInterval(timer);
+      btn.disabled = false;
+      btn.textContent = '发送验证码';
+    }
+  }, 1000);
+}
+
+// Theme toggle
+function toggleTheme() {
+  const html = document.documentElement;
+  const fab = document.querySelector('.theme-fab');
+  if (html.getAttribute('data-theme') === 'light') {
+    html.removeAttribute('data-theme');
+    fab.textContent = '🌙';
+  } else {
+    html.setAttribute('data-theme', 'light');
+    fab.textContent = '🌞';
+  }
+}
+
+// Generate floating particles
+function createParticles() {
+  const bg = document.querySelector('.bg-layer');
+  for (let i = 0; i < 12; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.style.left = Math.random() * 100 + '%';
+    p.style.animationDuration = (16 + Math.random() * 10) + 's';
+    p.style.animationDelay = (Math.random() * 16) + 's';
+    p.style.width = p.style.height = (2 + Math.random() * 2) + 'px';
+    bg.appendChild(p);
+  }
+}
+
+// Prevent form submission (demo)
+document.querySelectorAll('form').forEach(f => {
+  f.addEventListener('submit', e => e.preventDefault());
+});
+
+createParticles();
+</script>
+</body>
+</html>
