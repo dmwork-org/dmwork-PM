@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DMWork v4 — 会话列表</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+/* ============================================================
+   DMWork v4 — 会话列表
+   设计哲学：每天打开最多的页面，必须精致到像呼吸一样自然
+   ============================================================ */
+
+:root {
+  --brand-from: #7C5CFC;
+  --brand-to: #00D4AA;
+  --brand-gradient: linear-gradient(135deg, var(--brand-from), var(--brand-to));
+  --brand-glow: rgba(124, 92, 252, 0.3);
+  --brand-primary: #7C5CFC;
+
+  --bg-deep: #111318;
+  --bg-base: #171921;
+  --bg-surface: #1E212B;
+  --bg-elevated: #262A36;
+  --bg-hover: #2E3240;
+  --bg-active: #363B4A;
+
+  --text-primary: #E4E6ED;
+  --text-secondary: #9CA1B3;
+  --text-tertiary: #7A7F96;
+  --text-accent: #B0A4FF;
+
+  --border-subtle: rgba(255,255,255,0.04);
+  --border-default: rgba(255,255,255,0.07);
+  --border-glow: rgba(124,92,252,0.2);
+
+  --green: #00D4AA;
+  --amber: #FFAD33;
+  --red: #FF5C72;
+  --blue: #5C9AFF;
+
+  --font-sans: 'Inter', -apple-system, 'PingFang SC', sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
+
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px;
+  --sp-5: 20px; --sp-6: 24px; --sp-8: 32px; --sp-10: 40px;
+
+  --r-xs: 4px; --r-sm: 6px; --r-md: 10px; --r-lg: 14px; --r-xl: 20px; --r-full: 9999px;
+
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur: 200ms;
+
+  --nav-w: 60px;
+  --sidebar-w: 320px;
+}
+
+/* --- Light Theme --- */
+[data-theme="light"] {
+  --bg-deep: #F0F1F5;
+  --bg-base: #F7F8FA;
+  --bg-surface: #FFFFFF;
+  --bg-elevated: #F0F1F5;
+  --bg-hover: #EAEBF0;
+  --bg-active: #E2E3EA;
+  --text-primary: #1A1C24;
+  --text-secondary: #5C6070;
+  --text-tertiary: #9498A8;
+  --text-accent: #6B4FD8;
+  --border-subtle: rgba(0,0,0,0.04);
+  --border-default: rgba(0,0,0,0.07);
+  --border-glow: rgba(124,92,252,0.15);
+  --green: #00B894;
+  --amber: #E6930A;
+  --red: #E5405E;
+  --blue: #4A85E6;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font: 400 14px/1.5 var(--font-sans);
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  height: 100vh; overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }
+[data-theme="light"] ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); }
+
+/* ============================================================
+   APP SHELL
+   ============================================================ */
+.app { display: flex; height: 100vh; }
+
+/* ============================================================
+   NAV RAIL
+   ============================================================ */
+.nav {
+  width: var(--nav-w);
+  background: var(--bg-deep);
+  display: flex; flex-direction: column;
+  align-items: center;
+  padding: var(--sp-4) 0;
+  flex-shrink: 0;
+  border-right: 1px solid var(--border-subtle);
+}
+
+.nav-logo {
+  width: 34px; height: 34px;
+  border-radius: var(--r-md);
+  background: var(--brand-gradient);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: var(--sp-8);
+  position: relative;
+  cursor: pointer;
+  transition: transform 0.3s var(--ease);
+}
+.nav-logo:hover { transform: scale(1.08); }
+.nav-logo::after {
+  content: '';
+  position: absolute; inset: -3px;
+  border-radius: calc(var(--r-md) + 3px);
+  background: var(--brand-gradient);
+  opacity: 0.15;
+  filter: blur(8px);
+  z-index: -1;
+}
+.nav-logo svg { width: 18px; height: 18px; fill: white; }
+
+.nav-items { display: flex; flex-direction: column; align-items: center; gap: 2px; flex: 1; }
+
+.nav-btn {
+  width: 38px; height: 38px;
+  border-radius: var(--r-md); border: none;
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all var(--dur) var(--ease);
+  position: relative;
+}
+.nav-btn:hover { color: var(--text-secondary); background: var(--bg-hover); }
+.nav-btn.active {
+  color: var(--text-primary);
+  background: var(--bg-elevated);
+}
+.nav-btn.active::before {
+  content: '';
+  position: absolute; left: -1px; top: 50%; transform: translateY(-50%);
+  width: 3px; height: 18px;
+  border-radius: 0 3px 3px 0;
+  background: var(--brand-gradient);
+}
+.nav-btn svg { width: 20px; height: 20px; stroke: currentColor; stroke-width: 1.6; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+
+.nav-btn .badge {
+  position: absolute; top: 5px; right: 5px;
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--red);
+  border: 2px solid var(--bg-deep);
+}
+
+.nav-sep { width: 20px; height: 1px; background: var(--border-default); margin: var(--sp-2) 0; }
+
+.nav-bottom { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+
+.nav-avatar-small {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: var(--bg-elevated);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--dur);
+}
+.nav-avatar-small:hover { background: var(--bg-hover); }
+
+/* ============================================================
+   SIDEBAR — 会话列表，每天看最多的地方
+   ============================================================ */
+.sidebar {
+  width: var(--sidebar-w);
+  background: var(--bg-base);
+  border-right: 1px solid var(--border-subtle);
+  display: flex; flex-direction: column;
+  flex-shrink: 0;
+}
+
+.sidebar-head {
+  padding: var(--sp-4) var(--sp-4) 0;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.sidebar-title { font-weight: 600; font-size: 16px; letter-spacing: -0.01em; }
+
+.sidebar-actions { display: flex; align-items: center; gap: 2px; }
+
+.btn-icon {
+  width: 28px; height: 28px;
+  border-radius: var(--r-sm); border: none;
+  background: transparent; color: var(--text-tertiary);
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: all var(--dur);
+}
+.btn-icon:hover { background: var(--bg-hover); color: var(--text-secondary); }
+.btn-icon svg { width: 16px; height: 16px; stroke: currentColor; stroke-width: 1.8; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+
+/* 搜索框 */
+.sidebar-search { padding: var(--sp-3) var(--sp-4) var(--sp-1); }
+.search-wrap {
+  position: relative;
+  display: flex; align-items: center;
+}
+.search-wrap svg {
+  position: absolute; left: 10px;
+  width: 14px; height: 14px;
+  stroke: var(--text-tertiary); stroke-width: 1.8; fill: none;
+  stroke-linecap: round; stroke-linejoin: round;
+  pointer-events: none;
+  transition: stroke var(--dur);
+}
+.search-input {
+  width: 100%; height: 34px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+  padding: 0 var(--sp-3) 0 32px;
+  font: 400 13px var(--font-sans);
+  color: var(--text-primary);
+  outline: none;
+  transition: all var(--dur);
+}
+.search-input::placeholder { color: var(--text-tertiary); }
+.search-input:focus { border-color: var(--border-glow); background: var(--bg-elevated); }
+.search-input:focus + svg,
+.search-wrap:focus-within svg { stroke: var(--text-accent); }
+
+/* 筛选 chips */
+.sidebar-filters {
+  display: flex; gap: var(--sp-1); padding: var(--sp-2) var(--sp-4);
+}
+.filter-chip {
+  padding: 3px 10px;
+  border-radius: var(--r-full);
+  border: 1px solid var(--border-default);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12px; font-weight: 500;
+  cursor: pointer;
+  transition: all var(--dur);
+  white-space: nowrap;
+}
+.filter-chip:hover { border-color: var(--border-glow); color: var(--text-primary); }
+.filter-chip.active {
+  background: rgba(124,92,252,0.1);
+  border-color: rgba(124,92,252,0.3);
+  color: var(--text-accent);
+}
+
+/* 会话列表 */
+.sidebar-list { flex: 1; overflow-y: auto; padding: var(--sp-1) var(--sp-2); }
+
+/* ============================================================
+   会话项 — 微妙的层级感
+   ============================================================ */
+.conv {
+  display: flex; align-items: center; gap: var(--sp-3);
+  padding: 10px var(--sp-3);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  transition: background var(--dur);
+  position: relative;
+}
+.conv:hover { background: var(--bg-hover); }
+.conv.active { background: var(--bg-elevated); }
+.conv.active::before {
+  content: '';
+  position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+  width: 3px; height: 60%;
+  border-radius: 0 2px 2px 0;
+  background: var(--brand-gradient);
+}
+
+/* 头像 */
+.conv-ava {
+  width: 42px; height: 42px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; font-weight: 600; color: white;
+  position: relative;
+  overflow: visible;
+}
+/* 人类 = 圆 */
+.conv-ava.human { border-radius: 50%; }
+/* AI = 圆角方 */
+.conv-ava.ai { border-radius: var(--r-sm); }
+/* 群组 = 大圆角方 */
+.conv-ava.group { border-radius: var(--r-md); }
+
+/* 群头像：简洁的双色叠层方案（不用彩色字母堆叠） */
+.conv-ava.group {
+  background: var(--bg-elevated);
+  position: relative;
+  overflow: hidden;
+}
+.conv-ava.group .group-icon {
+  display: flex; align-items: center; justify-content: center;
+  width: 100%; height: 100%;
+}
+.conv-ava.group .group-icon svg {
+  width: 22px; height: 22px;
+  stroke: var(--text-secondary);
+  stroke-width: 1.5; fill: none;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+/* 群人数角标 */
+.conv-ava.group .group-count {
+  position: absolute; bottom: -2px; right: -2px;
+  min-width: 16px; height: 14px;
+  border-radius: 7px;
+  background: var(--bg-active);
+  border: 2px solid var(--bg-base);
+  font-size: 9px; font-weight: 600;
+  color: var(--text-secondary);
+  display: flex; align-items: center; justify-content: center;
+  padding: 0 3px;
+}
+
+/* 有背景色的头像 */
+.conv-ava[style] { overflow: hidden; }
+.conv-ava img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+}
+
+/* AI 角标 */
+.conv-ava .ai-mark {
+  position: absolute; bottom: -2px; right: -2px;
+  width: 14px; height: 14px;
+  border-radius: 4px;
+  background: var(--brand-gradient);
+  border: 2px solid var(--bg-base);
+  display: flex; align-items: center; justify-content: center;
+}
+.conv-ava .ai-mark svg {
+  width: 7px; height: 7px;
+  stroke: white; stroke-width: 2.5; fill: none;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+
+/* 在线状态 */
+.conv-ava .online {
+  position: absolute; bottom: -1px; right: -1px;
+  width: 11px; height: 11px;
+  border-radius: 50%;
+  background: var(--green);
+  border: 2px solid var(--bg-base);
+}
+
+/* 会话内容 */
+.conv-body { flex: 1; min-width: 0; }
+.conv-top { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-2); }
+.conv-name {
+  font-weight: 500; font-size: 14px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  flex: 1; min-width: 0;
+}
+.conv-time {
+  font-size: 11px; color: var(--text-tertiary);
+  flex-shrink: 0; font-variant-numeric: tabular-nums;
+}
+/* 有未读时时间高亮 */
+.conv.unread .conv-time { color: var(--text-accent); }
+
+.conv-bottom { display: flex; align-items: center; gap: var(--sp-2); margin-top: 2px; }
+.conv-msg {
+  font-size: 12.5px; color: var(--text-secondary);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  flex: 1; min-width: 0;
+}
+
+/* 未读角标 */
+.conv-badge {
+  min-width: 18px; height: 18px; border-radius: var(--r-full);
+  background: var(--brand-primary);
+  color: white; font-size: 10px; font-weight: 600;
+  display: flex; align-items: center; justify-content: center;
+  padding: 0 5px; flex-shrink: 0;
+}
+/* 静音未读 — 低调灰色 */
+.conv-badge.muted {
+  background: var(--bg-active);
+  color: var(--text-tertiary);
+}
+
+/* @我标记 */
+.conv-at {
+  font-size: 10px; font-weight: 600;
+  color: var(--red);
+  background: rgba(255, 92, 114, 0.1);
+  padding: 1px 5px;
+  border-radius: var(--r-xs);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* 草稿标记 */
+.conv-draft {
+  color: var(--red);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* 置顶标记 */
+.conv.pinned { background: rgba(124, 92, 252, 0.03); }
+[data-theme="light"] .conv.pinned { background: rgba(124, 92, 252, 0.03); }
+
+/* 免打扰 */
+.conv-mute {
+  flex-shrink: 0;
+  color: var(--text-tertiary);
+  display: flex; align-items: center;
+}
+.conv-mute svg {
+  width: 12px; height: 12px;
+  stroke: currentColor; stroke-width: 1.8; fill: none;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+
+/* ============================================================
+   MAIN CONTENT — 空状态
+   ============================================================ */
+.main {
+  flex: 1; display: flex; flex-direction: column;
+  background: var(--bg-surface);
+  min-width: 0;
+}
+
+.empty-state {
+  flex: 1;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: var(--sp-4);
+  user-select: none;
+}
+
+/* 品牌化空状态：渐变品牌图标 + 简洁文字 */
+.empty-icon {
+  width: 80px; height: 80px;
+  border-radius: var(--r-xl);
+  background: var(--bg-elevated);
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+}
+.empty-icon::before {
+  content: '';
+  position: absolute; inset: 0;
+  border-radius: var(--r-xl);
+  background: var(--brand-gradient);
+  opacity: 0.08;
+}
+.empty-icon svg {
+  width: 36px; height: 36px;
+  stroke: url(#grad-icon); stroke-width: 1.4; fill: none;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+
+.empty-title {
+  font-weight: 600; font-size: 16px;
+  color: var(--text-primary);
+}
+.empty-desc {
+  font-size: 13px; color: var(--text-tertiary);
+  text-align: center; max-width: 260px; line-height: 1.6;
+}
+
+.empty-shortcuts {
+  display: flex; gap: var(--sp-2);
+  margin-top: var(--sp-2);
+}
+.shortcut-btn {
+  display: flex; align-items: center; gap: var(--sp-2);
+  padding: 8px 16px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--border-default);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px; font-weight: 500;
+  cursor: pointer;
+  transition: all var(--dur);
+}
+.shortcut-btn:hover {
+  border-color: var(--border-glow);
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
+.shortcut-btn svg {
+  width: 16px; height: 16px;
+  stroke: currentColor; stroke-width: 1.8; fill: none;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+
+/* ============================================================
+   THEME TOGGLE
+   ============================================================ */
+.theme-toggle {
+  position: fixed; bottom: var(--sp-4); right: var(--sp-4);
+  width: 36px; height: 36px;
+  border-radius: var(--r-full);
+  border: 1px solid var(--border-default);
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all var(--dur);
+  z-index: 100;
+}
+.theme-toggle:hover { background: var(--bg-hover); color: var(--text-primary); }
+.theme-toggle svg {
+  width: 16px; height: 16px;
+  stroke: currentColor; stroke-width: 1.8; fill: none;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+
+/* ============================================================
+   Section Divider in list
+   ============================================================ */
+.list-divider {
+  padding: var(--sp-2) var(--sp-3);
+  font-size: 11px; font-weight: 600;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+</style>
+</head>
+<body>
+
+<!-- SVG defs for gradient icons -->
+<svg style="position:absolute;width:0;height:0">
+  <defs>
+    <linearGradient id="grad-icon" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7C5CFC"/>
+      <stop offset="100%" stop-color="#00D4AA"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<div class="app">
+
+  <!-- ======== NAV RAIL ======== -->
+  <nav class="nav">
+    <div class="nav-logo">
+      <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+    </div>
+    <div class="nav-items">
+      <button class="nav-btn active" title="消息">
+        <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <span class="badge"></span>
+      </button>
+      <button class="nav-btn" title="联系人">
+        <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      </button>
+      <button class="nav-btn" title="AI 助手">
+        <svg viewBox="0 0 24 24"><path d="M12 2a4 4 0 0 1 4 4v2a4 4 0 0 1-8 0V6a4 4 0 0 1 4-4z"/><path d="M6 10v1a6 6 0 0 0 12 0v-1"/><path d="M12 17v4"/><path d="M8 21h8"/></svg>
+      </button>
+      <button class="nav-btn" title="收藏">
+        <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+      </button>
+    </div>
+    <div class="nav-sep"></div>
+    <div class="nav-bottom">
+      <button class="nav-btn" title="设置">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+      <div class="nav-avatar-small">佳</div>
+    </div>
+  </nav>
+
+  <!-- ======== SIDEBAR — 会话列表 ======== -->
+  <aside class="sidebar">
+    <div class="sidebar-head">
+      <span class="sidebar-title">消息</span>
+      <div class="sidebar-actions">
+        <button class="btn-icon" title="新建会话">
+          <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+        <button class="btn-icon" title="更多">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="sidebar-search">
+      <div class="search-wrap">
+        <input class="search-input" type="text" placeholder="搜索会话、联系人…">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </div>
+    </div>
+
+    <div class="sidebar-filters">
+      <button class="filter-chip active">全部</button>
+      <button class="filter-chip">未读</button>
+      <button class="filter-chip">群聊</button>
+      <button class="filter-chip">AI</button>
+      <button class="filter-chip">置顶</button>
+    </div>
+
+    <div class="sidebar-list">
+
+      <!-- 置顶区域 -->
+      <div class="list-divider">置顶</div>
+
+      <!-- 1. 置顶群聊 — 有未读 @我 -->
+      <div class="conv pinned unread">
+        <div class="conv-ava group" style="background: var(--bg-active);">
+          <div class="group-icon">
+            <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <span class="group-count">12</span>
+        </div>
+        <div class="conv-body">
+          <div class="conv-top">
+            <span class="conv-name">DMWork 产品组</span>
+            <span class="conv-time">10:22</span>
+          </div>
+          <div class="conv-bottom">
+            <span class="conv-at">@我</span>
+            <span class="conv-msg">JOJO: 花花来看看这个交互方案</span>
+            <span class="conv-badge">3</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. 置顶 AI Bot — 带 AI 角标 -->
+      <div class="conv pinned">
+        <div class="conv-ava ai" style="background: linear-gradient(135deg, #7C5CFC, #00D4AA);">
+          <span style="font-size:16px;">🤖</span>
+          <span class="ai-mark">
+            <svg viewBox="0 0 24 24"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          </span>
+        </div>
+        <div class="conv-body">
+          <div class="conv-top">
+            <span class="conv-name">DMWork AI 助手</span>
+            <span class="conv-time">09:45</span>
+          </div>
+          <div class="conv-bottom">
+            <span class="conv-msg">已完成数据分析报告，共 3 页</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 普通区域 -->
+      <div class="list-divider">最近</div>
+
+      <!-- 3. 私聊 — 在线 + 未读 -->
+      <div class="conv unread">
+        <div class="conv-ava human" style="background: #4A6CF7;">
+          J
+          <span class="online"></span>
+        </div>
+        <div class="conv-body">
+          <div class="conv-top">
+            <span class="conv-name">JOJO</span>
+            <span class="conv-time">10:18</span>
+          </div>
+          <div class="conv-bottom">
+            <span class="conv-msg">那个需求文档我更新了，你看看</span>
+            <span class="conv-badge">2</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. 群聊 — 大群 -->
+      <div class="conv">
+        <div class="conv-ava group" style="background: var(--bg-active);">
+          <div class="group-icon">
+            <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <span class="group-count">86</span>
+        </div>
+        <div class="conv-body">
+          <div class="conv-top">
+            <span class="conv-name">Bug 反馈群</span>
+            <span class="conv-time">10:05</span>
+          </div>
+          <div class="conv-bottom">
+            <span class="conv-msg">浩哥: [图片]</span>
+            <span class="conv-badge muted">5</span>
+            <span class="conv-mute">
+              <svg viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5z"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5. 私聊 — 在线 -->
+      <div class="conv">
+        <div class="conv-ava human" style="background: #E67E22;">
+          A
+          <span class="online"></span>
+        </div>
+        <div class="conv-body">
+          <div class="conv-top">
+            <span class="conv-name">aoli</span>
+            <span class="conv-time">昨天</span>
+          </div>
+          <div class="conv-bottom">
+            <span class="conv-msg">好的，那就先这样，明天再说</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 6. AI Bot -->
+      <div class="conv">
+        <div class="conv-ava ai" style="background: linear-gradient(135deg, #5C9AFF, #00D4AA);">
+          <span style="font-size:16px;">📊</span>
+          <span class="ai-mark">
+            <svg viewBox="0 0 24 24"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          </span>
+        </div>
+        <div class="conv-body">
+          <div class="conv-top">
+            <span class="conv-name">数据分析 Agent</span>
+            <span class="conv-time">昨天</span>
+          </div>
+          <div class="conv-bottom">
+            <span class="conv-msg">日报已生成，DAU 环比上升 12%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 7. 群聊 — 有草稿 -->
+      <div class="conv">
+        <div class="conv-ava group" style="background: var(--bg-active);">
+          <div class="group-icon">
+            <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <span class="group-count">5</span>
+        </div>
+        <div class="conv-body">
+          <div class="conv-top">
+            <span class="conv-name">设计评审小组</span>
+            <span class="conv-time">昨天</span>
+          </div>
+          <div class="conv-bottom">
+            <span class="conv-draft">[草稿]</span>
+            <span class="conv-msg">我觉得这个方案可以…</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 8. 私聊 -->
+      <div class="conv">
+        <div class="conv-ava human" style="background: #9B59B6;">
+          浩
+        </div>
+        <div class="conv-body">
+          <div class="conv-top">
+            <span class="conv-name">浩哥</span>
+            <span class="conv-time">周一</span>
+          </div>
+          <div class="conv-bottom">
+            <span class="conv-msg">收到，我先跑一下测试</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 9. AI Bot — 代码助手 -->
+      <div class="conv">
+        <div class="conv-ava ai" style="background: linear-gradient(135deg, #7C5CFC, #FF5C72);">
+          <span style="font-size:16px;">⚡</span>
+          <span class="ai-mark">
+            <svg viewBox="0 0 24 24"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          </span>
+        </div>
+        <div class="conv-body">
+          <div class="conv-top">
+            <span class="conv-name">Code Review Bot</span>
+            <span class="conv-time">周一</span>
+          </div>
+          <div class="conv-bottom">
+            <span class="conv-msg">PR #142 已审核，发现 2 个建议</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 10. 群聊 — 有未读 -->
+      <div class="conv unread">
+        <div class="conv-ava group" style="background: var(--bg-active);">
+          <div class="group-icon">
+            <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <span class="group-count">23</span>
+        </div>
+        <div class="conv-body">
+          <div class="conv-top">
+            <span class="conv-name">全员群</span>
+            <span class="conv-time">周日</span>
+          </div>
+          <div class="conv-bottom">
+            <span class="conv-msg">HR: 3月团建安排已出，请查看</span>
+            <span class="conv-badge muted">12</span>
+            <span class="conv-mute">
+              <svg viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5z"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 11. 私聊 -->
+      <div class="conv">
+        <div class="conv-ava human" style="background: #1ABC9C;">
+          小
+        </div>
+        <div class="conv-body">
+          <div class="conv-top">
+            <span class="conv-name">小明</span>
+            <span class="conv-time">3/5</span>
+          </div>
+          <div class="conv-bottom">
+            <span class="conv-msg">好嘞，那我们下周一对一下</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 12. 私聊 -->
+      <div class="conv">
+        <div class="conv-ava human" style="background: #E74C3C;">
+          李
+        </div>
+        <div class="conv-body">
+          <div class="conv-top">
+            <span class="conv-name">李总</span>
+            <span class="conv-time">3/3</span>
+          </div>
+          <div class="conv-bottom">
+            <span class="conv-msg">[语音] 0:32</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </aside>
+
+  <!-- ======== MAIN — 空状态 ======== -->
+  <main class="main">
+    <div class="empty-state">
+      <div class="empty-icon">
+        <svg viewBox="0 0 24 24">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          <path d="M8 9h8" opacity="0.5"/>
+          <path d="M8 13h5" opacity="0.5"/>
+        </svg>
+      </div>
+      <div class="empty-title">选择一个会话开始</div>
+      <div class="empty-desc">
+        从左侧选择会话，或创建新的对话。<br>
+        AI 助手随时待命 ⚡
+      </div>
+      <div class="empty-shortcuts">
+        <button class="shortcut-btn">
+          <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          新建会话
+        </button>
+        <button class="shortcut-btn">
+          <svg viewBox="0 0 24 24"><path d="M12 2a4 4 0 0 1 4 4v2a4 4 0 0 1-8 0V6a4 4 0 0 1 4-4z"/><path d="M6 10v1a6 6 0 0 0 12 0v-1"/><path d="M12 17v4"/><path d="M8 21h8"/></svg>
+          找 AI 帮忙
+        </button>
+      </div>
+    </div>
+  </main>
+
+</div>
+
+<!-- Theme Toggle -->
+<button class="theme-toggle" onclick="toggleTheme()" title="切换主题">
+  <svg class="icon-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+  <svg class="icon-moon" viewBox="0 0 24 24" style="display:none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+</button>
+
+<script>
+function toggleTheme() {
+  const html = document.documentElement;
+  const isDark = html.getAttribute('data-theme') === 'dark';
+  html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+  document.querySelector('.icon-sun').style.display = isDark ? 'none' : '';
+  document.querySelector('.icon-moon').style.display = isDark ? '' : 'none';
+}
+
+// Filter chips
+document.querySelectorAll('.filter-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+  });
+});
+
+// Conv click
+document.querySelectorAll('.conv').forEach(conv => {
+  conv.addEventListener('click', () => {
+    document.querySelectorAll('.conv').forEach(c => c.classList.remove('active'));
+    conv.classList.add('active');
+  });
+});
+</script>
+
+</body>
+</html>
