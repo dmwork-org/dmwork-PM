@@ -1,0 +1,2291 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DMWork v4 — Design System & 页面汇总</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+/* ============================================================
+   DMWork v4 Design System
+   
+   设计理念："对话即工作台"
+   - AI 不是另一个聊天对象，是嵌入对话流的智能层
+   - 人类消息 = 气泡，AI 消息 = 面板（两种视觉语言并存）
+   - 暗色优先，亮色可选
+   ============================================================ */
+
+/* ============================================================
+   1. DESIGN TOKENS
+   ============================================================ */
+:root {
+  /* ── Brand ── */
+  --brand-from: #7C5CFC;
+  --brand-to: #00D4AA;
+  --brand-gradient: linear-gradient(135deg, var(--brand-from), var(--brand-to));
+  --brand-gradient-hover: linear-gradient(135deg, #6B4FD8, #00BF99);
+  --brand-gradient-subtle: linear-gradient(135deg, rgba(124,92,252,0.12), rgba(0,212,170,0.08));
+  --brand-glow: rgba(124, 92, 252, 0.3);
+  --brand-primary: #7C5CFC;
+  --brand-primary-hover: #6B4FD8;
+
+  /* ── Typography ── */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans SC', sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+
+  --text-h1: 700 28px/1.25 var(--font-sans);
+  --text-h2: 700 22px/1.3 var(--font-sans);
+  --text-h3: 600 16px/1.35 var(--font-sans);
+  --text-h4: 600 14px/1.4 var(--font-sans);
+  --text-body: 400 14px/1.5 var(--font-sans);
+  --text-body-medium: 500 14px/1.5 var(--font-sans);
+  --text-caption: 400 12px/1.5 var(--font-sans);
+  --text-tiny: 500 10px/1.4 var(--font-sans);
+  --text-code: 400 13px/1.6 var(--font-mono);
+  --text-mono-sm: 400 11px/1.4 var(--font-mono);
+
+  /* ── Spacing (4px grid) ── */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --sp-10: 40px;
+  --sp-12: 48px;
+
+  /* ── Radius ── */
+  --r-xs: 4px;
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-xl: 20px;
+  --r-full: 9999px;
+
+  /* ── Transitions ── */
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-fast: 150ms;
+  --dur: 200ms;
+  --dur-slow: 350ms;
+
+  /* ── Layout ── */
+  --nav-w: 60px;
+  --sidebar-w: 280px;
+  --task-rail-w: 320px;
+}
+
+/* ============================================================
+   2. DARK THEME (default)
+   ============================================================ */
+[data-theme="dark"] {
+  /* Background layers (深→浅) */
+  --bg-deep: #111318;
+  --bg-base: #171921;
+  --bg-surface: #1E212B;
+  --bg-elevated: #262A36;
+  --bg-hover: #2E3240;
+  --bg-active: #363B4A;
+
+  /* Text */
+  --text-primary: #E4E6ED;
+  --text-secondary: #9CA1B3;
+  --text-tertiary: #7A7F96;
+  --text-accent: #B0A4FF;
+  --text-inverse: #111318;
+
+  /* Borders */
+  --border-subtle: rgba(255,255,255,0.04);
+  --border-default: rgba(255,255,255,0.07);
+  --border-strong: rgba(255,255,255,0.12);
+  --border-glow: rgba(124,92,252,0.2);
+
+  /* AI */
+  --ai-surface: rgba(124,92,252,0.04);
+  --ai-border: rgba(124,92,252,0.12);
+  --ai-panel-bg: var(--bg-base);
+
+  /* Semantic */
+  --green: #00D4AA;
+  --green-bg: rgba(0,212,170,0.1);
+  --amber: #FFAD33;
+  --amber-bg: rgba(255,173,51,0.1);
+  --red: #FF5C72;
+  --red-bg: rgba(255,92,114,0.1);
+  --blue: #5C9AFF;
+  --blue-bg: rgba(92,154,255,0.1);
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.5);
+  --shadow-glow: 0 0 20px rgba(124,92,252,0.12);
+
+  /* Code */
+  --code-bg: #111318;
+  --code-border: rgba(255,255,255,0.06);
+
+  color-scheme: dark;
+}
+
+/* ============================================================
+   3. LIGHT THEME
+   ============================================================ */
+[data-theme="light"] {
+  --bg-deep: #F0F1F5;
+  --bg-base: #F7F8FA;
+  --bg-surface: #FFFFFF;
+  --bg-elevated: #F0F1F5;
+  --bg-hover: #EAEBF0;
+  --bg-active: #E2E3EA;
+
+  --text-primary: #1A1C24;
+  --text-secondary: #5C6070;
+  --text-tertiary: #9498A8;
+  --text-accent: #6B4FD8;
+  --text-inverse: #FFFFFF;
+
+  --border-subtle: rgba(0,0,0,0.05);
+  --border-default: rgba(0,0,0,0.08);
+  --border-strong: rgba(0,0,0,0.14);
+  --border-glow: rgba(124,92,252,0.25);
+
+  --ai-surface: rgba(124,92,252,0.03);
+  --ai-border: rgba(124,92,252,0.12);
+  --ai-panel-bg: #FAFAFF;
+
+  --green: #00B894;
+  --green-bg: rgba(0,184,148,0.08);
+  --amber: #E6930A;
+  --amber-bg: rgba(230,147,10,0.08);
+  --red: #E5405E;
+  --red-bg: rgba(229,64,94,0.08);
+  --blue: #4A85E6;
+  --blue-bg: rgba(74,133,230,0.08);
+
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+  --shadow-glow: 0 0 20px rgba(124,92,252,0.08);
+
+  --code-bg: #1F2937;
+  --code-border: rgba(0,0,0,0.1);
+
+  color-scheme: light;
+}
+
+/* ============================================================
+   SHOWCASE STYLES (仅用于本展示页面)
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font: var(--text-body);
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: rgba(124,92,252,0.3);
+  color: var(--text-primary);
+}
+
+.page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: var(--sp-12) var(--sp-6);
+}
+
+/* Page Header */
+.page-header {
+  text-align: center;
+  margin-bottom: var(--sp-12);
+  padding-bottom: var(--sp-10);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.page-header h1 {
+  font: var(--text-h1);
+  font-size: 36px;
+  background: var(--brand-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: var(--sp-2);
+}
+.page-header .subtitle {
+  font: var(--text-body);
+  color: var(--text-secondary);
+  max-width: 500px;
+  margin: 0 auto;
+}
+.page-header .version-tag {
+  display: inline-block;
+  font: var(--text-tiny);
+  padding: 2px 8px;
+  border-radius: var(--r-full);
+  background: var(--brand-gradient-subtle);
+  color: var(--text-accent);
+  margin-top: var(--sp-3);
+  letter-spacing: 0.5px;
+}
+
+/* Section */
+.section {
+  margin-bottom: var(--sp-12);
+}
+.section-head {
+  display: flex; align-items: baseline; gap: var(--sp-3);
+  margin-bottom: var(--sp-6);
+  padding-bottom: var(--sp-3);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.section-num {
+  font: var(--text-mono-sm);
+  color: var(--text-accent);
+  background: rgba(124,92,252,0.08);
+  padding: 2px 6px;
+  border-radius: var(--r-xs);
+}
+.section-title { font: var(--text-h2); }
+
+.subsection {
+  margin-bottom: var(--sp-8);
+}
+.subsection-title {
+  font: var(--text-h3);
+  color: var(--text-secondary);
+  margin-bottom: var(--sp-4);
+}
+
+/* Showcase grids */
+.swatch-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--sp-3);
+}
+.swatch {
+  border-radius: var(--r-md);
+  overflow: hidden;
+  border: 1px solid var(--border-subtle);
+}
+.swatch-color {
+  height: 64px;
+  display: flex; align-items: flex-end; justify-content: flex-start;
+  padding: var(--sp-2);
+}
+.swatch-info {
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--bg-surface);
+}
+.swatch-name { font: var(--text-caption); font-weight: 600; }
+.swatch-val { font: var(--text-mono-sm); color: var(--text-tertiary); }
+
+.gradient-bar {
+  height: 48px;
+  border-radius: var(--r-md);
+  margin-bottom: var(--sp-2);
+}
+
+/* Type samples */
+.type-row {
+  display: flex; align-items: baseline; gap: var(--sp-6);
+  padding: var(--sp-3) 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.type-label {
+  width: 120px; flex-shrink: 0;
+  font: var(--text-mono-sm);
+  color: var(--text-tertiary);
+}
+
+/* Spacing vis */
+.spacing-grid {
+  display: flex; flex-wrap: wrap; gap: var(--sp-4); align-items: flex-end;
+}
+.spacing-item { text-align: center; }
+.spacing-box {
+  background: var(--brand-gradient-subtle);
+  border: 1px solid var(--border-glow);
+  border-radius: var(--r-xs);
+  margin-bottom: var(--sp-1);
+}
+.spacing-label { font: var(--text-mono-sm); color: var(--text-tertiary); }
+
+/* Radius vis */
+.radius-grid {
+  display: flex; flex-wrap: wrap; gap: var(--sp-4); align-items: center;
+}
+.radius-item { text-align: center; }
+.radius-box {
+  width: 56px; height: 56px;
+  background: var(--bg-elevated);
+  border: 2px solid var(--border-glow);
+  margin-bottom: var(--sp-1);
+}
+.radius-label { font: var(--text-mono-sm); color: var(--text-tertiary); }
+
+/* Component row */
+.comp-row {
+  display: flex; flex-wrap: wrap; gap: var(--sp-3); align-items: center;
+  margin-bottom: var(--sp-4);
+}
+
+/* Demo containers */
+.demo-box {
+  background: var(--bg-surface);
+  border-radius: var(--r-lg);
+  border: 1px solid var(--border-subtle);
+  padding: var(--sp-6);
+  margin-bottom: var(--sp-4);
+}
+.demo-label {
+  font: var(--text-tiny);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text-tertiary);
+  margin-bottom: var(--sp-3);
+}
+.demo-note {
+  font: var(--text-caption);
+  color: var(--text-tertiary);
+  margin-top: var(--sp-2);
+  font-style: italic;
+}
+
+/* Theme toggle */
+.theme-fab {
+  position: fixed; bottom: 20px; right: 20px;
+  width: 40px; height: 40px; border-radius: 50%;
+  background: var(--bg-elevated); border: 1px solid var(--border-default);
+  color: var(--text-secondary); font-size: 18px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  box-shadow: var(--shadow-md); z-index: 1000;
+  transition: transform 0.2s;
+}
+.theme-fab:hover { transform: scale(1.1); }
+
+/* ============================================================
+   ACTUAL COMPONENTS (可直接复制到产品代码)
+   ============================================================ */
+
+/* ── Buttons ── */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2);
+  font: var(--text-body-medium);
+  padding: var(--sp-2) var(--sp-4);
+  border-radius: var(--r-md);
+  border: none;
+  cursor: pointer;
+  transition: all var(--dur) var(--ease);
+  white-space: nowrap;
+}
+.btn svg { width: 16px; height: 16px; stroke: currentColor; stroke-width: 1.8; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+
+.btn-primary {
+  background: var(--brand-gradient);
+  color: white;
+  box-shadow: 0 2px 8px rgba(124,92,252,0.25);
+}
+.btn-primary:hover { box-shadow: 0 4px 16px rgba(124,92,252,0.35); transform: translateY(-1px); }
+
+.btn-secondary {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  border: 1px solid var(--border-default);
+}
+.btn-secondary:hover { background: var(--bg-hover); border-color: var(--border-strong); }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+}
+.btn-ghost:hover { background: var(--bg-hover); color: var(--text-primary); }
+
+.btn-danger {
+  background: var(--red-bg);
+  color: var(--red);
+  border: 1px solid rgba(255,92,114,0.2);
+}
+.btn-danger:hover { background: rgba(255,92,114,0.15); }
+
+.btn-sm {
+  font: var(--text-caption); font-weight: 500;
+  padding: var(--sp-1) var(--sp-3);
+  border-radius: var(--r-sm);
+}
+
+.btn-icon-only {
+  width: 32px; height: 32px; padding: 0;
+  border-radius: var(--r-md); border: none;
+  background: transparent; color: var(--text-tertiary);
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: all var(--dur);
+}
+.btn-icon-only:hover { background: var(--bg-hover); color: var(--text-secondary); }
+.btn-icon-only svg { width: 18px; height: 18px; stroke: currentColor; stroke-width: 1.6; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ── Input ── */
+.input {
+  width: 100%; height: 36px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--border-default);
+  background: var(--bg-elevated);
+  padding: 0 var(--sp-3);
+  font: var(--text-body);
+  color: var(--text-primary);
+  outline: none;
+  transition: all var(--dur);
+}
+.input::placeholder { color: var(--text-tertiary); }
+.input:focus { border-color: var(--border-glow); box-shadow: 0 0 0 3px rgba(124,92,252,0.06); }
+
+/* ── Badge / Tag ── */
+.badge {
+  display: inline-flex; align-items: center;
+  font: var(--text-tiny);
+  padding: 1px 6px;
+  border-radius: var(--r-xs);
+  letter-spacing: 0.5px;
+}
+.badge-ai {
+  background: var(--brand-gradient);
+  color: white;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+.badge-model {
+  background: rgba(255,255,255,0.04);
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: var(--r-xs);
+}
+.badge-status {
+  font-weight: 600;
+  padding: 1px 8px;
+  border-radius: var(--r-full);
+}
+.badge-status.done { background: var(--green-bg); color: var(--green); }
+.badge-status.running { background: rgba(124,92,252,0.1); color: var(--text-accent); }
+.badge-status.error { background: var(--red-bg); color: var(--red); }
+
+.badge-count {
+  min-width: 16px; height: 16px;
+  border-radius: var(--r-full);
+  background: var(--brand-primary);
+  color: white;
+  font-size: 10px; font-weight: 600;
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 0 4px;
+}
+.badge-count.unread { background: var(--red); }
+
+/* ── Avatar ── */
+.avatar {
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 600; color: white;
+  flex-shrink: 0;
+  position: relative;
+}
+.avatar-sm { width: 28px; height: 28px; font-size: 11px; }
+.avatar-md { width: 36px; height: 36px; font-size: 14px; }
+.avatar-lg { width: 48px; height: 48px; font-size: 18px; }
+
+/* 人类 = 圆形 */
+.avatar-human { border-radius: 50%; }
+/* AI = 圆角方形 */
+.avatar-ai { border-radius: var(--r-sm); }
+/* 群组 = 大圆角方形 */
+.avatar-group { border-radius: var(--r-md); }
+
+/* 在线状态点 */
+.avatar .status-dot {
+  position: absolute; bottom: -1px; right: -1px;
+  width: 10px; height: 10px; border-radius: 50%;
+  border: 2px solid var(--bg-base);
+}
+.status-dot.online { background: var(--green); }
+.status-dot.offline { background: var(--text-tertiary); }
+.status-dot.busy { background: var(--red); }
+
+/* AI 角标：渐变小方块 */
+.avatar .ai-mark {
+  position: absolute; bottom: -2px; right: -2px;
+  width: 14px; height: 14px; border-radius: 4px;
+  background: var(--brand-gradient);
+  border: 2px solid var(--bg-base);
+  display: flex; align-items: center; justify-content: center;
+}
+.avatar .ai-mark svg { width: 7px; height: 7px; stroke: white; stroke-width: 2.5; fill: none; }
+
+/* ── Filter Chips ── */
+.chip {
+  padding: 3px 10px;
+  border-radius: var(--r-full);
+  border: 1px solid var(--border-default);
+  background: transparent;
+  color: var(--text-secondary);
+  font: var(--text-caption); font-weight: 500;
+  cursor: pointer;
+  transition: all var(--dur);
+}
+.chip:hover { border-color: var(--border-glow); color: var(--text-primary); }
+.chip.active {
+  background: rgba(124,92,252,0.1);
+  border-color: rgba(124,92,252,0.3);
+  color: var(--text-accent);
+}
+
+/* ── Tooltip (via title attr) ── */
+
+/* ── Reactions ── */
+.reaction {
+  display: inline-flex; align-items: center; gap: 3px;
+  padding: 2px 6px;
+  border-radius: var(--r-full);
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border-subtle);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all var(--dur);
+}
+.reaction:hover { background: rgba(255,255,255,0.08); border-color: var(--border-default); }
+.reaction .r-count { font-size: 11px; color: var(--text-tertiary); }
+.reaction.active { border-color: var(--border-glow); background: rgba(124,92,252,0.06); }
+
+/* ============================================================
+   MESSAGE COMPONENTS
+   ============================================================ */
+
+/* ── Human Message Bubble ── */
+.msg-bubble-demo {
+  display: inline-block;
+  background: var(--bg-elevated);
+  border-radius: 2px var(--r-lg) var(--r-lg) var(--r-lg);
+  padding: var(--sp-2) var(--sp-3);
+  max-width: 480px;
+  line-height: 1.65; font-size: 14px;
+  word-break: break-word;
+  border: 1px solid var(--border-subtle);
+}
+
+/* ── AI Panel ── */
+.ai-panel-demo {
+  max-width: 620px;
+  background: var(--ai-panel-bg);
+  border-radius: var(--r-lg);
+  border: 1px solid var(--ai-border);
+  overflow: hidden;
+  position: relative;
+}
+.ai-panel-demo::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--brand-gradient);
+  opacity: 0.6;
+}
+
+.ai-panel-head-demo {
+  padding: var(--sp-3) var(--sp-4);
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.ai-agent-info-demo {
+  display: flex; align-items: center; gap: var(--sp-2);
+}
+.ai-agent-name-demo { font-weight: 600; font-size: 13px; }
+
+.ai-panel-body-demo {
+  padding: var(--sp-4) var(--sp-5);
+  line-height: 1.75; font-size: 14px;
+}
+.ai-panel-body-demo p { margin-bottom: var(--sp-3); }
+.ai-panel-body-demo p:last-child { margin-bottom: 0; }
+.ai-panel-body-demo code {
+  font: 12.5px var(--font-mono);
+  background: rgba(124,92,252,0.08);
+  color: var(--text-accent);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.ai-panel-foot-demo {
+  padding: var(--sp-2) var(--sp-4);
+  display: flex; align-items: center; justify-content: space-between;
+  border-top: 1px solid var(--border-subtle);
+  background: rgba(255,255,255,0.01);
+}
+.ai-stats-demo {
+  font: var(--text-mono-sm);
+  color: var(--text-tertiary);
+  display: flex; align-items: center; gap: var(--sp-3);
+}
+.ai-stats-demo .stat-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--green); }
+
+/* ── Code Block ── */
+.code-block-demo {
+  background: var(--code-bg);
+  border-radius: var(--r-md);
+  overflow: hidden;
+  border: 1px solid var(--code-border);
+}
+.code-head-demo {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: var(--sp-1) var(--sp-3);
+  background: rgba(255,255,255,0.02);
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.code-lang-demo { font: 500 11px var(--font-mono); color: #9498A8; }
+.code-body-demo {
+  padding: var(--sp-3);
+  font: 13px/1.6 var(--font-mono);
+  color: #c9d1d9;
+  overflow-x: auto; white-space: pre;
+}
+.code-body-demo .kw { color: #c9a0ff; }
+.code-body-demo .fn { color: #79e8d0; }
+.code-body-demo .str { color: #a5d6ff; }
+.code-body-demo .cm { color: #555e6e; font-style: italic; }
+
+/* ── Thinking Steps ── */
+.thinking-demo {
+  max-width: 620px;
+  background: var(--ai-panel-bg);
+  border-radius: var(--r-lg);
+  border: 1px solid var(--ai-border);
+  overflow: hidden;
+  position: relative;
+}
+.thinking-demo::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--brand-gradient);
+  animation: shimmer 2s ease-in-out infinite;
+}
+@keyframes shimmer { 0%,100%{opacity:0.4;} 50%{opacity:1;} }
+
+.thinking-head-demo {
+  padding: var(--sp-3) var(--sp-4);
+  display: flex; align-items: center; gap: var(--sp-3);
+}
+.thinking-pulse-demo {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--brand-primary);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100%{opacity:0.4;transform:scale(0.8);} 50%{opacity:1;transform:scale(1.2);} }
+
+.thinking-label-demo { font-size: 13px; font-weight: 500; color: var(--text-accent); }
+
+.thinking-steps-demo { padding: 0 var(--sp-4) var(--sp-4); }
+
+.think-step-demo {
+  display: flex; align-items: flex-start; gap: var(--sp-3);
+  position: relative;
+  padding-bottom: var(--sp-3);
+}
+.think-step-demo:not(:last-child)::before {
+  content: '';
+  position: absolute; left: 9px; top: 20px; bottom: 0;
+  width: 1px;
+  background: var(--border-default);
+}
+.think-step-demo.done:not(:last-child)::before {
+  background: var(--brand-primary); opacity: 0.3;
+}
+
+.step-dot-demo {
+  width: 18px; height: 18px; flex-shrink: 0;
+  border-radius: 50%;
+  border: 2px solid var(--border-default);
+  display: flex; align-items: center; justify-content: center;
+  margin-top: 1px;
+}
+.think-step-demo.done .step-dot-demo { border-color: var(--green); background: var(--green-bg); }
+.think-step-demo.done .step-dot-demo svg { stroke: var(--green); }
+.think-step-demo.active .step-dot-demo {
+  border-color: var(--brand-primary);
+  background: rgba(124,92,252,0.1);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+.step-dot-demo svg { width: 10px; height: 10px; stroke: var(--text-tertiary); stroke-width: 2; fill: none; }
+
+.step-info-demo { flex: 1; min-width: 0; }
+.step-label-demo { font-size: 12.5px; font-weight: 500; color: var(--text-secondary); }
+.think-step-demo.done .step-label-demo { color: var(--text-primary); }
+.think-step-demo.active .step-label-demo { color: var(--text-accent); }
+.step-detail-demo { font: var(--text-mono-sm); color: var(--text-tertiary); margin-top: 1px; }
+.step-time-demo { font: 10px var(--font-mono); color: var(--text-tertiary); flex-shrink: 0; margin-top: 2px; }
+
+/* ── Voice Message ── */
+.voice-demo {
+  display: flex; align-items: center; gap: var(--sp-3);
+  background: var(--bg-elevated);
+  border-radius: var(--r-lg);
+  padding: var(--sp-2) var(--sp-3);
+  max-width: 220px;
+  border: 1px solid var(--border-subtle);
+}
+.voice-play-demo {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--brand-gradient); border: none;
+  color: white; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.voice-play-demo svg { width: 12px; height: 12px; fill: white; stroke: none; }
+.voice-waves-demo { display: flex; align-items: center; gap: 1.5px; flex: 1; height: 20px; }
+.voice-bar-demo { width: 2px; border-radius: 1px; background: var(--text-tertiary); }
+.voice-bar-demo.played { background: var(--brand-primary); }
+.voice-dur-demo { font: 11px var(--font-mono); color: var(--text-tertiary); flex-shrink: 0; }
+
+/* ── Conversation List Item ── */
+.conv-demo {
+  display: flex; align-items: center; gap: var(--sp-3);
+  padding: var(--sp-2);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  transition: background var(--dur);
+  position: relative;
+}
+.conv-demo:hover { background: var(--bg-hover); }
+.conv-demo.active {
+  background: var(--bg-elevated);
+}
+.conv-demo.active::before {
+  content: '';
+  position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+  width: 3px; height: 60%;
+  border-radius: 0 2px 2px 0;
+  background: var(--brand-gradient);
+}
+.conv-body-demo { flex: 1; min-width: 0; }
+.conv-top-demo { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-2); }
+.conv-name-demo { font-weight: 500; font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.conv-time-demo { font-size: 11px; color: var(--text-tertiary); flex-shrink: 0; font-variant-numeric: tabular-nums; }
+.conv-msg-demo { font-size: 12px; color: var(--text-tertiary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
+
+/* ── Input Box ── */
+.input-box-demo {
+  background: var(--bg-elevated);
+  border-radius: var(--r-xl);
+  border: 1px solid var(--border-subtle);
+  padding: var(--sp-3) var(--sp-4);
+  max-width: 600px;
+  transition: all 0.3s var(--ease);
+}
+.input-box-demo:focus-within {
+  border-color: var(--border-glow);
+  box-shadow: 0 0 0 3px rgba(124,92,252,0.06), 0 4px 20px rgba(0,0,0,0.3);
+}
+
+/* AI 模式输入框 */
+.input-box-demo.ai-mode {
+  border-color: rgba(124,92,252,0.3);
+  background: linear-gradient(135deg, rgba(124,92,252,0.04), rgba(0,212,170,0.02));
+}
+.input-box-demo.ai-mode:focus-within {
+  border-color: rgba(124,92,252,0.4);
+  box-shadow: 0 0 0 3px rgba(124,92,252,0.08), 0 4px 24px rgba(124,92,252,0.1);
+}
+
+.input-ai-ctx-demo {
+  display: flex; align-items: center; gap: var(--sp-2);
+  padding-bottom: var(--sp-2);
+  margin-bottom: var(--sp-2);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.input-ai-tag-demo {
+  display: flex; align-items: center; gap: var(--sp-1);
+  padding: 2px 8px 2px 4px;
+  border-radius: var(--r-full);
+  background: rgba(124,92,252,0.12);
+  font-size: 12px; font-weight: 500;
+  color: var(--text-accent);
+}
+.input-ai-tag-demo .tag-ava-demo {
+  width: 16px; height: 16px;
+  border-radius: 3px;
+  background: var(--brand-gradient);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 8px; font-weight: 700; color: white;
+}
+
+.input-main-demo { display: flex; align-items: center; gap: var(--sp-3); }
+.input-main-demo textarea {
+  flex: 1; border: none; background: transparent;
+  color: var(--text-primary);
+  font: var(--text-body);
+  resize: none; outline: none;
+  min-height: 22px;
+}
+.input-main-demo textarea::placeholder { color: var(--text-tertiary); }
+
+.send-btn-demo {
+  width: 32px; height: 32px;
+  border-radius: var(--r-md); border: none;
+  background: var(--brand-gradient);
+  color: white; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.send-btn-demo svg { width: 16px; height: 16px; fill: white; stroke: none; }
+
+/* ── Task Card ── */
+.task-card-demo {
+  background: var(--bg-surface);
+  border-radius: var(--r-md);
+  border: 1px solid var(--border-subtle);
+  padding: var(--sp-3);
+  max-width: 300px;
+  cursor: pointer;
+  transition: all var(--dur);
+}
+.task-card-demo:hover { border-color: var(--border-glow); }
+.task-card-head-demo {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: var(--sp-2);
+}
+.task-agent-demo { display: flex; align-items: center; gap: var(--sp-2); font-size: 12px; font-weight: 600; }
+.task-agent-dot-demo { width: 6px; height: 6px; border-radius: 50%; }
+.task-card-body-demo { font-size: 12px; color: var(--text-secondary); line-height: 1.5; margin-bottom: var(--sp-2); }
+.task-card-foot-demo { font: 10px var(--font-mono); color: var(--text-tertiary); display: flex; justify-content: space-between; }
+
+/* ── Page Nav (Table of Contents) ── */
+.toc {
+  background: var(--bg-surface);
+  border-radius: var(--r-lg);
+  border: 1px solid var(--border-subtle);
+  padding: var(--sp-4) var(--sp-5);
+  margin-bottom: var(--sp-10);
+}
+.toc-title { font: var(--text-h4); margin-bottom: var(--sp-3); color: var(--text-secondary); }
+.toc-list { list-style: none; display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-1); }
+.toc-list a {
+  display: flex; align-items: center; gap: var(--sp-2);
+  padding: var(--sp-1) var(--sp-2);
+  border-radius: var(--r-sm);
+  font: var(--text-caption); font-weight: 500;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: all var(--dur);
+}
+.toc-list a:hover { background: var(--bg-hover); color: var(--text-primary); }
+.toc-list .toc-num { font: var(--text-mono-sm); color: var(--text-accent); }
+
+/* ── Design Principle Cards ── */
+.principle-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--sp-4);
+}
+.principle-card {
+  background: var(--bg-surface);
+  border-radius: var(--r-lg);
+  border: 1px solid var(--border-subtle);
+  padding: var(--sp-5);
+}
+.principle-num {
+  font: var(--text-mono-sm);
+  color: var(--text-accent);
+  background: rgba(124,92,252,0.08);
+  padding: 2px 6px;
+  border-radius: var(--r-xs);
+  display: inline-block;
+  margin-bottom: var(--sp-2);
+}
+.principle-title { font: var(--text-h4); margin-bottom: var(--sp-2); }
+.principle-desc { font: var(--text-caption); color: var(--text-secondary); line-height: 1.6; }
+
+/* Layout diagram */
+.layout-diagram {
+  background: var(--bg-surface);
+  border-radius: var(--r-lg);
+  border: 1px solid var(--border-subtle);
+  padding: var(--sp-4);
+  display: flex;
+  height: 360px;
+  overflow: hidden;
+}
+.layout-nav {
+  width: 50px; background: var(--bg-deep);
+  border-radius: var(--r-md);
+  margin-right: var(--sp-2);
+  display: flex; flex-direction: column; align-items: center;
+  padding: var(--sp-3) 0; gap: var(--sp-2);
+}
+.layout-nav .ln-dot {
+  width: 28px; height: 28px; border-radius: var(--r-sm);
+  background: var(--brand-gradient); opacity: 0.7;
+}
+.layout-nav .ln-item {
+  width: 28px; height: 28px; border-radius: var(--r-sm);
+  background: var(--bg-elevated);
+}
+.layout-sidebar {
+  width: 180px; background: var(--bg-base);
+  border-radius: var(--r-md);
+  margin-right: var(--sp-2);
+  padding: var(--sp-3);
+}
+.layout-sidebar .ls-bar {
+  height: 8px; border-radius: 4px; background: var(--bg-elevated); margin-bottom: var(--sp-2);
+}
+.layout-sidebar .ls-item {
+  height: 36px; border-radius: var(--r-sm); background: var(--bg-elevated);
+  margin-bottom: var(--sp-1);
+}
+.layout-sidebar .ls-item.active { background: var(--bg-active); position: relative; }
+.layout-sidebar .ls-item.active::before {
+  content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+  width: 3px; height: 60%; border-radius: 0 2px 2px 0; background: var(--brand-gradient);
+}
+.layout-chat {
+  flex: 1; background: var(--bg-surface);
+  border-radius: var(--r-md);
+  display: flex; flex-direction: column;
+  margin-right: var(--sp-2);
+}
+.layout-chat-head {
+  height: 40px; border-bottom: 1px solid var(--border-subtle);
+  display: flex; align-items: center; padding: 0 var(--sp-3); gap: var(--sp-2);
+}
+.layout-chat-head .lch-ava { width: 22px; height: 22px; border-radius: var(--r-sm); background: var(--bg-elevated); }
+.layout-chat-head .lch-bar { width: 80px; height: 8px; border-radius: 4px; background: var(--bg-elevated); }
+.layout-chat-msgs {
+  flex: 1; padding: var(--sp-3); display: flex; flex-direction: column; gap: var(--sp-2); justify-content: flex-end;
+}
+.layout-chat-msgs .lcm-human {
+  width: 60%; height: 28px; border-radius: 2px var(--r-md) var(--r-md) var(--r-md);
+  background: var(--bg-elevated);
+}
+.layout-chat-msgs .lcm-ai {
+  width: 80%; border-radius: var(--r-md);
+  background: var(--ai-panel-bg);
+  border: 1px solid var(--ai-border);
+  position: relative;
+  padding: var(--sp-2);
+}
+.layout-chat-msgs .lcm-ai::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0;
+  height: 2px; background: var(--brand-gradient); opacity: 0.5; border-radius: var(--r-md) var(--r-md) 0 0;
+}
+.layout-chat-msgs .lcm-ai-bar { height: 6px; border-radius: 3px; background: var(--bg-elevated); margin-bottom: 4px; }
+.layout-chat-msgs .lcm-ai-bar:last-child { width: 50%; margin-bottom: 0; }
+.layout-chat-input {
+  height: 44px; margin: var(--sp-2); border-radius: var(--r-lg);
+  background: var(--bg-elevated); border: 1px solid var(--border-subtle);
+}
+.layout-task {
+  width: 160px; background: var(--bg-base);
+  border-radius: var(--r-md);
+  padding: var(--sp-3);
+}
+.layout-task .lt-head { height: 8px; border-radius: 4px; background: var(--bg-elevated); margin-bottom: var(--sp-3); }
+.layout-task .lt-card {
+  border-radius: var(--r-sm);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  padding: var(--sp-2);
+  margin-bottom: var(--sp-2);
+}
+.layout-task .lt-card-bar { height: 5px; border-radius: 3px; background: var(--bg-elevated); margin-bottom: 3px; }
+.layout-task .lt-card-bar:last-child { width: 60%; margin-bottom: 0; }
+
+.layout-labels {
+  display: flex; gap: var(--sp-6); margin-top: var(--sp-3); justify-content: center;
+}
+.layout-label {
+  display: flex; align-items: center; gap: var(--sp-2);
+  font: var(--text-caption); color: var(--text-tertiary);
+}
+.layout-label .ll-dot {
+  width: 8px; height: 8px; border-radius: 2px;
+}
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- ============================================================ -->
+  <!-- PAGE HEADER -->
+  <!-- ============================================================ -->
+  <header class="page-header">
+    <h1>DMWork Design System</h1>
+    <p class="subtitle">AI-Native IM · 对话即工作台 · 设计系统 & 页面汇总</p>
+    <span class="version-tag">V4 · 2026.03.09</span>
+  </header>
+
+  <!-- TOC -->
+  <nav class="toc">
+    <div class="toc-title">目录</div>
+    <ul class="toc-list">
+      <li><a href="#principles"><span class="toc-num">01</span> 设计原则</a></li>
+      <li><a href="#layout"><span class="toc-num">02</span> 布局架构</a></li>
+      <li><a href="#colors"><span class="toc-num">03</span> 色彩系统</a></li>
+      <li><a href="#typography"><span class="toc-num">04</span> 字体系统</a></li>
+      <li><a href="#spacing"><span class="toc-num">05</span> 间距 & 圆角</a></li>
+      <li><a href="#avatars"><span class="toc-num">06</span> 头像 & 身份</a></li>
+      <li><a href="#buttons"><span class="toc-num">07</span> 按钮 & 交互</a></li>
+      <li><a href="#inputs"><span class="toc-num">08</span> 输入框</a></li>
+      <li><a href="#badges"><span class="toc-num">09</span> 标签 & 徽章</a></li>
+      <li><a href="#messages"><span class="toc-num">10</span> 消息：人类 vs AI</a></li>
+      <li><a href="#thinking"><span class="toc-num">11</span> AI 思考过程</a></li>
+      <li><a href="#code"><span class="toc-num">12</span> 代码块</a></li>
+      <li><a href="#voice"><span class="toc-num">13</span> 语音消息</a></li>
+      <li><a href="#convlist"><span class="toc-num">14</span> 对话列表</a></li>
+      <li><a href="#taskrail"><span class="toc-num">15</span> 任务面板</a></li>
+      <li><a href="#navrail"><span class="toc-num">16</span> Nav Rail</a></li>
+      <li><a href="#icons"><span class="toc-num">16.5</span> 图标规范</a></li>
+      <li><a href="#forms"><span class="toc-num">17</span> 表单组件</a></li>
+      <li><a href="#convstates"><span class="toc-num">18</span> 对话项状态</a></li>
+      <li><a href="#modal"><span class="toc-num">19</span> 弹窗 & Overlay</a></li>
+      <li><a href="#empty"><span class="toc-num">20</span> 空状态</a></li>
+      <li><a href="#atmosphere"><span class="toc-num">21</span> 背景氛围</a></li>
+      <li><a href="#pages"><span class="toc-num">22</span> 页面汇总</a></li>
+    </ul>
+  </nav>
+
+  <!-- ============================================================ -->
+  <!-- 01 DESIGN PRINCIPLES -->
+  <!-- ============================================================ -->
+  <section class="section" id="principles">
+    <div class="section-head">
+      <span class="section-num">01</span>
+      <h2 class="section-title">设计原则</h2>
+    </div>
+
+    <div class="principle-grid">
+      <div class="principle-card">
+        <span class="principle-num">01</span>
+        <div class="principle-title">AI 与人的清晰边界</div>
+        <div class="principle-desc">一眼区分谁是人、谁是 AI。人类消息用气泡，AI 消息用面板——两种视觉语言并存但不冲突。头像形状也区分：人=圆形，AI=方形。</div>
+      </div>
+      <div class="principle-card">
+        <span class="principle-num">02</span>
+        <div class="principle-title">对话即工作台</div>
+        <div class="principle-desc">不在 IM 和工具之间跳转。AI 的输出是"活的对象"——可钉住、可展开、可操作，而非只是一条消息。任务面板让关键 AI 产出不被消息流淹没。</div>
+      </div>
+      <div class="principle-card">
+        <span class="principle-num">03</span>
+        <div class="principle-title">表面简洁，底层强大</div>
+        <div class="principle-desc">主界面只有 3 个元素：对话列表、对话流、输入框。操作按钮 hover 才出现，任务面板按需展开。功能按需浮现，不做多余堆叠。</div>
+      </div>
+      <div class="principle-card">
+        <span class="principle-num">04</span>
+        <div class="principle-title">开发者审美</div>
+        <div class="principle-desc">暗色主题默认，等宽字体友好，代码块一流，信息密度偏高。品牌色避开蓝色（IM 领域用烂了），选用紫→青渐变代表 AI 原生。</div>
+      </div>
+      <div class="principle-card">
+        <span class="principle-num">05</span>
+        <div class="principle-title">AI 透明可控</div>
+        <div class="principle-desc">AI 在做什么、用了多久、消耗多少 token，一目了然。思考步骤可视化，不是黑箱。模型信息、耗时始终可见。</div>
+      </div>
+      <div class="principle-card">
+        <span class="principle-num">06</span>
+        <div class="principle-title">上下文感知</div>
+        <div class="principle-desc">界面根据对话对象变化——和 AI 对话时输入框变形、出现模型信息。筛选 chips 让用户快速切换 AI/人类/群组视图。</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 02 LAYOUT -->
+  <!-- ============================================================ -->
+  <section class="section" id="layout">
+    <div class="section-head">
+      <span class="section-num">02</span>
+      <h2 class="section-title">布局架构</h2>
+    </div>
+
+    <div class="layout-diagram">
+      <div class="layout-nav">
+        <div class="ln-dot"></div>
+        <div class="ln-item"></div>
+        <div class="ln-item"></div>
+        <div class="ln-item"></div>
+      </div>
+      <div class="layout-sidebar">
+        <div class="ls-bar" style="width: 50%;"></div>
+        <div class="ls-bar" style="width: 100%; height: 24px; margin-bottom: var(--sp-3);"></div>
+        <div class="ls-item active"></div>
+        <div class="ls-item"></div>
+        <div class="ls-item"></div>
+        <div class="ls-item"></div>
+        <div class="ls-item"></div>
+      </div>
+      <div class="layout-chat">
+        <div class="layout-chat-head">
+          <div class="lch-ava"></div>
+          <div class="lch-bar"></div>
+        </div>
+        <div class="layout-chat-msgs">
+          <div class="lcm-human"></div>
+          <div class="lcm-human" style="width:45%;"></div>
+          <div class="lcm-ai">
+            <div class="lcm-ai-bar"></div>
+            <div class="lcm-ai-bar"></div>
+            <div class="lcm-ai-bar"></div>
+          </div>
+          <div class="lcm-human" style="width:55%;"></div>
+        </div>
+        <div class="layout-chat-input"></div>
+      </div>
+      <div class="layout-task">
+        <div class="lt-head"></div>
+        <div class="lt-card">
+          <div class="lt-card-bar"></div>
+          <div class="lt-card-bar"></div>
+        </div>
+        <div class="lt-card">
+          <div class="lt-card-bar"></div>
+          <div class="lt-card-bar"></div>
+        </div>
+        <div class="lt-card">
+          <div class="lt-card-bar"></div>
+          <div class="lt-card-bar"></div>
+        </div>
+      </div>
+    </div>
+    <div class="layout-labels">
+      <span class="layout-label"><span class="ll-dot" style="background: var(--brand-gradient);"></span> Nav Rail (60px)</span>
+      <span class="layout-label"><span class="ll-dot" style="background: var(--bg-base);border:1px solid var(--border-default);"></span> Sidebar (280px)</span>
+      <span class="layout-label"><span class="ll-dot" style="background: var(--bg-surface);border:1px solid var(--border-default);"></span> Chat (flex)</span>
+      <span class="layout-label"><span class="ll-dot" style="background: var(--bg-base);border:1px solid var(--border-default);"></span> Task Rail (320px, 可选)</span>
+    </div>
+    <p class="demo-note" style="text-align:center; margin-top: var(--sp-3);">四栏布局：Nav Rail + 对话列表 + 聊天主区 + 任务面板（按需展开）。Chat Head 使用毛玻璃效果 (backdrop-filter: blur)。</p>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 03 COLORS -->
+  <!-- ============================================================ -->
+  <section class="section" id="colors">
+    <div class="section-head">
+      <span class="section-num">03</span>
+      <h2 class="section-title">色彩系统</h2>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">品牌渐变</div>
+      <div class="gradient-bar" style="background: var(--brand-gradient);"></div>
+      <div style="display:flex; justify-content:space-between; font: var(--text-mono-sm); color: var(--text-tertiary);">
+        <span>#7C5CFC (from)</span>
+        <span>135deg</span>
+        <span>#00D4AA (to)</span>
+      </div>
+      <p class="demo-note">品牌渐变用于：Logo、AI 标签、发送按钮、头像 AI 角标、active 指示条。全局只在关键元素上使用，避免滥用。</p>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">背景层级 (暗色)</div>
+      <div class="swatch-grid">
+        <div class="swatch">
+          <div class="swatch-color" style="background: #111318;"><span style="font:var(--text-tiny);color:rgba(255,255,255,0.4);">Deep</span></div>
+          <div class="swatch-info"><div class="swatch-name">--bg-deep</div><div class="swatch-val">#111318</div></div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background: #171921;"><span style="font:var(--text-tiny);color:rgba(255,255,255,0.4);">Base</span></div>
+          <div class="swatch-info"><div class="swatch-name">--bg-base</div><div class="swatch-val">#171921</div></div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background: #1E212B;"><span style="font:var(--text-tiny);color:rgba(255,255,255,0.4);">Surface</span></div>
+          <div class="swatch-info"><div class="swatch-name">--bg-surface</div><div class="swatch-val">#1E212B</div></div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background: #262A36;"><span style="font:var(--text-tiny);color:rgba(255,255,255,0.4);">Elevated</span></div>
+          <div class="swatch-info"><div class="swatch-name">--bg-elevated</div><div class="swatch-val">#262A36</div></div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background: #2E3240;"><span style="font:var(--text-tiny);color:rgba(255,255,255,0.4);">Hover</span></div>
+          <div class="swatch-info"><div class="swatch-name">--bg-hover</div><div class="swatch-val">#2E3240</div></div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background: #363B4A;"><span style="font:var(--text-tiny);color:rgba(255,255,255,0.4);">Active</span></div>
+          <div class="swatch-info"><div class="swatch-name">--bg-active</div><div class="swatch-val">#363B4A</div></div>
+        </div>
+      </div>
+      <p class="demo-note">用亮度差区分空间层级，不用线条。Nav 最深 → Sidebar 次之 → Chat 表面 → 气泡/卡片 elevated。</p>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">背景层级 (亮色)</div>
+      <div class="swatch-grid">
+        <div class="swatch">
+          <div class="swatch-color" style="background: #F0F1F5;"><span style="font:var(--text-tiny);color:#5C6070;">Deep</span></div>
+          <div class="swatch-info"><div class="swatch-name">--bg-deep</div><div class="swatch-val">#F0F1F5</div></div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background: #F7F8FA;"><span style="font:var(--text-tiny);color:#5C6070;">Base</span></div>
+          <div class="swatch-info"><div class="swatch-name">--bg-base</div><div class="swatch-val">#F7F8FA</div></div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background: #FFFFFF; border: 1px solid rgba(0,0,0,0.06);"><span style="font:var(--text-tiny);color:#5C6070;">Surface</span></div>
+          <div class="swatch-info"><div class="swatch-name">--bg-surface</div><div class="swatch-val">#FFFFFF</div></div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background: #F0F1F5;"><span style="font:var(--text-tiny);color:#5C6070;">Elevated</span></div>
+          <div class="swatch-info"><div class="swatch-name">--bg-elevated</div><div class="swatch-val">#F0F1F5</div></div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background: #EAEBF0;"><span style="font:var(--text-tiny);color:#5C6070;">Hover</span></div>
+          <div class="swatch-info"><div class="swatch-name">--bg-hover</div><div class="swatch-val">#EAEBF0</div></div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background: #E2E3EA;"><span style="font:var(--text-tiny);color:#5C6070;">Active</span></div>
+          <div class="swatch-info"><div class="swatch-name">--bg-active</div><div class="swatch-val">#E2E3EA</div></div>
+        </div>
+      </div>
+      <p class="demo-note">亮色主题背景层级反转：最深层是浅灰 → Surface 纯白 → Elevated 回到浅灰。注意亮色下 elevated 和 deep 同色（#F0F1F5），用边框和阴影区分层次。AI 面板背景用 #FAFAFF（微紫白）。</p>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">文字层级</div>
+      <div class="swatch-grid">
+        <div class="swatch">
+          <div class="swatch-color" style="background: var(--bg-surface);"><span style="color: var(--text-primary); font-weight: 600;">Primary 文字</span></div>
+          <div class="swatch-info"><div class="swatch-name">--text-primary</div><div class="swatch-val">#E4E6ED / #1A1C24</div></div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background: var(--bg-surface);"><span style="color: var(--text-secondary);">Secondary 文字</span></div>
+          <div class="swatch-info"><div class="swatch-name">--text-secondary</div><div class="swatch-val">#9CA1B3 / #5C6070</div></div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background: var(--bg-surface);"><span style="color: var(--text-tertiary);">Tertiary 文字</span></div>
+          <div class="swatch-info"><div class="swatch-name">--text-tertiary</div><div class="swatch-val">#7A7F96 / #9498A8</div></div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background: var(--bg-surface);"><span style="color: var(--text-accent); font-weight: 600;">Accent 文字</span></div>
+          <div class="swatch-info"><div class="swatch-name">--text-accent</div><div class="swatch-val">#B0A4FF / #6B4FD8</div></div>
+        </div>
+      </div>
+      <p class="demo-note">⚠️ <strong>使用规则</strong>：内容性文字（消息预览、搜索结果摘要）至少用 <code style="font:11px var(--font-mono);color:var(--text-accent);">text-secondary</code>。<code style="font:11px var(--font-mono);color:var(--text-accent);">text-tertiary</code> 仅用于时间戳、辅助标签、placeholder 等纯装饰信息。</p>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">语义色</div>
+      <div class="swatch-grid">
+        <div class="swatch">
+          <div class="swatch-color" style="background: var(--green);"><span style="font:var(--text-tiny);color:white;">Green</span></div>
+          <div class="swatch-info"><div class="swatch-name">--green</div><div class="swatch-val">#00D4AA / #00B894</div></div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background: var(--amber);"><span style="font:var(--text-tiny);color:white;">Amber</span></div>
+          <div class="swatch-info"><div class="swatch-name">--amber</div><div class="swatch-val">#FFAD33 / #E6930A</div></div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background: var(--red);"><span style="font:var(--text-tiny);color:white;">Red</span></div>
+          <div class="swatch-info"><div class="swatch-name">--red</div><div class="swatch-val">#FF5C72 / #E5405E</div></div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background: var(--blue);"><span style="font:var(--text-tiny);color:white;">Blue</span></div>
+          <div class="swatch-info"><div class="swatch-name">--blue</div><div class="swatch-val">#5C9AFF / #4A85E6</div></div>
+        </div>
+      </div>
+      <p class="demo-note">Green=在线/成功，Amber=警告，Red=错误/未读，Blue=信息。每色配有 --*-bg 背景变体用于 badge。</p>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 04 TYPOGRAPHY -->
+  <!-- ============================================================ -->
+  <section class="section" id="typography">
+    <div class="section-head">
+      <span class="section-num">04</span>
+      <h2 class="section-title">字体系统</h2>
+    </div>
+
+    <div class="demo-box">
+      <div class="type-row"><span class="type-label">--text-h1</span><span style="font: var(--text-h1);">对话即工作台 H1</span></div>
+      <div class="type-row"><span class="type-label">--text-h2</span><span style="font: var(--text-h2);">设计系统标题 H2</span></div>
+      <div class="type-row"><span class="type-label">--text-h3</span><span style="font: var(--text-h3);">组件分区标题 H3</span></div>
+      <div class="type-row"><span class="type-label">--text-h4</span><span style="font: var(--text-h4);">卡片内标题 H4</span></div>
+      <div class="type-row"><span class="type-label">--text-body</span><span style="font: var(--text-body);">正文文字 · 消息内容 · 14px Regular</span></div>
+      <div class="type-row"><span class="type-label">--text-body-medium</span><span style="font: var(--text-body-medium);">用户名 · 强调文字 · 14px Medium</span></div>
+      <div class="type-row"><span class="type-label">--text-caption</span><span style="font: var(--text-caption);">时间戳 · 预览文字 · 12px Regular</span></div>
+      <div class="type-row"><span class="type-label">--text-tiny</span><span style="font: var(--text-tiny);">AI TAG · BADGE · 10px Medium</span></div>
+      <div class="type-row"><span class="type-label">--text-code</span><span style="font: var(--text-code);">const agent = new AI();</span></div>
+      <div class="type-row"><span class="type-label">--text-mono-sm</span><span style="font: var(--text-mono-sm);">Claude-4 · 1.8s · 428 tokens</span></div>
+    </div>
+    <p class="demo-note">Sans: Inter（英文） + PingFang SC / Noto Sans SC（中文）。Mono: JetBrains Mono。AI 元信息统一使用 mono-sm。</p>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 05 SPACING & RADIUS -->
+  <!-- ============================================================ -->
+  <section class="section" id="spacing">
+    <div class="section-head">
+      <span class="section-num">05</span>
+      <h2 class="section-title">间距 & 圆角</h2>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">间距（4px 基准网格）</div>
+      <div class="spacing-grid">
+        <div class="spacing-item"><div class="spacing-box" style="width:16px;height:16px;"></div><div class="spacing-label">sp-1<br>4px</div></div>
+        <div class="spacing-item"><div class="spacing-box" style="width:24px;height:24px;"></div><div class="spacing-label">sp-2<br>8px</div></div>
+        <div class="spacing-item"><div class="spacing-box" style="width:32px;height:32px;"></div><div class="spacing-label">sp-3<br>12px</div></div>
+        <div class="spacing-item"><div class="spacing-box" style="width:40px;height:40px;"></div><div class="spacing-label">sp-4<br>16px</div></div>
+        <div class="spacing-item"><div class="spacing-box" style="width:48px;height:48px;"></div><div class="spacing-label">sp-5<br>20px</div></div>
+        <div class="spacing-item"><div class="spacing-box" style="width:56px;height:56px;"></div><div class="spacing-label">sp-6<br>24px</div></div>
+        <div class="spacing-item"><div class="spacing-box" style="width:72px;height:72px;"></div><div class="spacing-label">sp-8<br>32px</div></div>
+        <div class="spacing-item"><div class="spacing-box" style="width:88px;height:88px;"></div><div class="spacing-label">sp-10<br>40px</div></div>
+        <div class="spacing-item"><div class="spacing-box" style="width:104px;height:104px;"></div><div class="spacing-label">sp-12<br>48px</div></div>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">圆角</div>
+      <div class="radius-grid">
+        <div class="radius-item"><div class="radius-box" style="border-radius: var(--r-xs);"></div><div class="radius-label">r-xs<br>4px</div></div>
+        <div class="radius-item"><div class="radius-box" style="border-radius: var(--r-sm);"></div><div class="radius-label">r-sm<br>6px</div></div>
+        <div class="radius-item"><div class="radius-box" style="border-radius: var(--r-md);"></div><div class="radius-label">r-md<br>10px</div></div>
+        <div class="radius-item"><div class="radius-box" style="border-radius: var(--r-lg);"></div><div class="radius-label">r-lg<br>14px</div></div>
+        <div class="radius-item"><div class="radius-box" style="border-radius: var(--r-xl);"></div><div class="radius-label">r-xl<br>20px</div></div>
+        <div class="radius-item"><div class="radius-box" style="border-radius: var(--r-full);"></div><div class="radius-label">r-full<br>9999px</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 06 AVATARS -->
+  <!-- ============================================================ -->
+  <section class="section" id="avatars">
+    <div class="section-head">
+      <span class="section-num">06</span>
+      <h2 class="section-title">头像 & 身份识别</h2>
+    </div>
+
+    <div class="demo-box">
+      <div class="demo-label">头像形状规则</div>
+      <div class="comp-row" style="gap: var(--sp-8); margin-top: var(--sp-3);">
+        <div style="text-align:center;">
+          <div class="avatar avatar-lg avatar-human" style="background: #0EA5E9; margin: 0 auto var(--sp-2);">J</div>
+          <div style="font: var(--text-caption); color: var(--text-secondary);">人类 = 圆形</div>
+        </div>
+        <div style="text-align:center;">
+          <div class="avatar avatar-lg avatar-ai" style="background: linear-gradient(135deg, #7C5CFC, #5C9AFF); margin: 0 auto var(--sp-2);">T
+            <span class="ai-mark"><svg viewBox="0 0 24 24" stroke-linecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></span>
+          </div>
+          <div style="font: var(--text-caption); color: var(--text-secondary);">AI = 圆角方形 + 角标</div>
+        </div>
+        <div style="text-align:center;">
+          <div class="avatar avatar-lg avatar-group" style="background: linear-gradient(135deg, #6366F1, #8B5CF6); margin: 0 auto var(--sp-2);">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <div style="font: var(--text-caption); color: var(--text-secondary);">群组 = 大圆角方形</div>
+        </div>
+      </div>
+      <p class="demo-note">形状即身份：无需读文字标签，一眼就能分辨人类/AI/群组。AI 头像用渐变色，人类用纯色。</p>
+    </div>
+
+    <div class="demo-box">
+      <div class="demo-label">尺寸</div>
+      <div class="comp-row" style="gap: var(--sp-6); margin-top: var(--sp-3);">
+        <div style="text-align:center;">
+          <div class="avatar avatar-sm avatar-human" style="background: #059669; margin: 0 auto var(--sp-2);">H</div>
+          <div style="font: var(--text-mono-sm); color: var(--text-tertiary);">sm · 28px</div>
+        </div>
+        <div style="text-align:center;">
+          <div class="avatar avatar-md avatar-human" style="background: #059669; margin: 0 auto var(--sp-2);">H
+            <span class="status-dot online"></span>
+          </div>
+          <div style="font: var(--text-mono-sm); color: var(--text-tertiary);">md · 36px</div>
+        </div>
+        <div style="text-align:center;">
+          <div class="avatar avatar-lg avatar-human" style="background: #059669; margin: 0 auto var(--sp-2);">H
+            <span class="status-dot online"></span>
+          </div>
+          <div style="font: var(--text-mono-sm); color: var(--text-tertiary);">lg · 48px</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="demo-box">
+      <div class="demo-label">状态指示</div>
+      <div class="comp-row" style="gap: var(--sp-6); margin-top: var(--sp-3);">
+        <div style="text-align:center;">
+          <div class="avatar avatar-md avatar-human" style="background: #0EA5E9; margin: 0 auto var(--sp-2);">J<span class="status-dot online"></span></div>
+          <div style="font: var(--text-caption); color: var(--text-tertiary);">Online</div>
+        </div>
+        <div style="text-align:center;">
+          <div class="avatar avatar-md avatar-human" style="background: #D97706; margin: 0 auto var(--sp-2);">Y<span class="status-dot busy"></span></div>
+          <div style="font: var(--text-caption); color: var(--text-tertiary);">Busy</div>
+        </div>
+        <div style="text-align:center;">
+          <div class="avatar avatar-md avatar-human" style="background: #059669; margin: 0 auto var(--sp-2);">H<span class="status-dot offline"></span></div>
+          <div style="font: var(--text-caption); color: var(--text-tertiary);">Offline</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 07 BUTTONS -->
+  <!-- ============================================================ -->
+  <section class="section" id="buttons">
+    <div class="section-head">
+      <span class="section-num">07</span>
+      <h2 class="section-title">按钮 & 交互</h2>
+    </div>
+
+    <div class="demo-box">
+      <div class="demo-label">按钮类型</div>
+      <div class="comp-row" style="margin-top: var(--sp-3);">
+        <button class="btn btn-primary">渐变主按钮</button>
+        <button class="btn btn-secondary">次级按钮</button>
+        <button class="btn btn-ghost">Ghost 按钮</button>
+        <button class="btn btn-danger">危险操作</button>
+      </div>
+      <div class="comp-row">
+        <button class="btn btn-primary btn-sm">小号主按钮</button>
+        <button class="btn btn-secondary btn-sm">小号次级</button>
+      </div>
+      <div class="comp-row">
+        <button class="btn-icon-only"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
+        <button class="btn-icon-only"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></button>
+        <button class="btn-icon-only"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
+        <span style="font: var(--text-caption); color: var(--text-tertiary); margin-left: var(--sp-3);">← 图标按钮（32×32，hover 显示背景）</span>
+      </div>
+      <p class="demo-note">主按钮使用品牌渐变 + 微光阴影。hover 时上浮 1px + 阴影加深。AI 操作按钮（复制/重新生成/赞/踩）默认隐藏，hover 面板时显现。</p>
+    </div>
+
+    <div class="demo-box">
+      <div class="demo-label">Reactions</div>
+      <div class="comp-row" style="margin-top: var(--sp-3);">
+        <span class="reaction">👍 <span class="r-count">2</span></span>
+        <span class="reaction active">✅ <span class="r-count">1</span></span>
+        <span class="reaction">💪 <span class="r-count">1</span></span>
+        <span class="reaction">😂 <span class="r-count">3</span></span>
+      </div>
+      <p class="demo-note">半透明背景 + 细边框，active 时边框变品牌色。</p>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 08 INPUTS -->
+  <!-- ============================================================ -->
+  <section class="section" id="inputs">
+    <div class="section-head">
+      <span class="section-num">08</span>
+      <h2 class="section-title">输入框</h2>
+    </div>
+
+    <div class="demo-box">
+      <div class="demo-label">基础输入框</div>
+      <div style="max-width:400px; margin-top: var(--sp-3);">
+        <input class="input" placeholder="搜索对话…">
+      </div>
+    </div>
+
+    <div class="demo-box">
+      <div class="demo-label">聊天输入框 — 普通模式</div>
+      <div class="input-box-demo" style="margin-top: var(--sp-3);">
+        <div class="input-main-demo">
+          <textarea rows="1" placeholder="在 AI 工作群 中发消息…"></textarea>
+          <button class="send-btn-demo"><svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="demo-box">
+      <div class="demo-label">聊天输入框 — AI 模式（@AI 后自动变形）</div>
+      <div class="input-box-demo ai-mode" style="margin-top: var(--sp-3);">
+        <div class="input-ai-ctx-demo">
+          <div class="input-ai-tag-demo">
+            <span class="tag-ava-demo">T</span>
+            Thomas AI
+          </div>
+          <span style="font: var(--text-mono-sm); color: var(--text-tertiary); margin-left: auto;">Claude-4 · ~1.5s</span>
+        </div>
+        <div class="input-main-demo">
+          <textarea rows="1" placeholder="给 Thomas AI 发指令…"></textarea>
+          <button class="send-btn-demo"><svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+        </div>
+      </div>
+      <p class="demo-note">当用户 @AI 时，输入框边框变紫色渐变光晕，出现 Agent 上下文条（显示 Agent 名 + 模型 + 预估耗时），placeholder 变成"给 XX 发指令"。强化"你在跟 AI 说话"的感知。</p>
+    </div>
+
+    <div class="demo-box">
+      <div class="demo-label">Filter Chips</div>
+      <div class="comp-row" style="margin-top: var(--sp-3);">
+        <button class="chip active">全部</button>
+        <button class="chip">人类</button>
+        <button class="chip">AI</button>
+        <button class="chip">群组</button>
+      </div>
+      <p class="demo-note">用于对话列表筛选。圆角胶囊 + 细边框，active 时紫色背景。</p>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 09 BADGES -->
+  <!-- ============================================================ -->
+  <section class="section" id="badges">
+    <div class="section-head">
+      <span class="section-num">09</span>
+      <h2 class="section-title">标签 & 徽章</h2>
+    </div>
+
+    <div class="demo-box">
+      <div class="comp-row" style="gap: var(--sp-4);">
+        <div>
+          <div class="demo-label" style="margin-bottom: var(--sp-2);">AI 身份标签</div>
+          <span class="badge badge-ai">AI</span>
+        </div>
+        <div>
+          <div class="demo-label" style="margin-bottom: var(--sp-2);">模型标签</div>
+          <span class="badge badge-model">Claude-4 · 1.8s</span>
+        </div>
+        <div>
+          <div class="demo-label" style="margin-bottom: var(--sp-2);">状态: 完成</div>
+          <span class="badge badge-status done">✓ 完成</span>
+        </div>
+        <div>
+          <div class="demo-label" style="margin-bottom: var(--sp-2);">状态: 运行中</div>
+          <span class="badge badge-status running">⟳ 运行中</span>
+        </div>
+        <div>
+          <div class="demo-label" style="margin-bottom: var(--sp-2);">状态: 错误</div>
+          <span class="badge badge-status error">✗ 错误</span>
+        </div>
+        <div>
+          <div class="demo-label" style="margin-bottom: var(--sp-2);">未读计数</div>
+          <span class="badge-count">3</span>
+          <span class="badge-count unread">12</span>
+        </div>
+      </div>
+      <p class="demo-note">AI 标签使用品牌渐变背景 + 白字，醒目但不刺眼。模型标签使用 mono 字体 + 半透明背景，低调展示技术信息。</p>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 10 MESSAGES -->
+  <!-- ============================================================ -->
+  <section class="section" id="messages">
+    <div class="section-head">
+      <span class="section-num">10</span>
+      <h2 class="section-title">消息：人类 vs AI</h2>
+    </div>
+
+    <div class="demo-box">
+      <div class="demo-label">人类消息 — 气泡</div>
+      <div style="display:flex; gap:var(--sp-3); align-items:flex-start; margin-top: var(--sp-3);">
+        <div class="avatar avatar-md avatar-human" style="background: #0EA5E9;">J</div>
+        <div>
+          <div style="display:flex;align-items:center;gap:var(--sp-2);margin-bottom:2px;">
+            <span style="font-weight:600;font-size:13px;">JoJo</span>
+            <span style="font-size:11px;color:var(--text-tertiary);">08:15</span>
+          </div>
+          <div class="msg-bubble-demo">大家早！昨天那个限流的问题我看了下日志，应该是并发 webhook 太多导致的。</div>
+          <div class="comp-row" style="gap:var(--sp-1);margin-top:var(--sp-1);">
+            <span class="reaction">👍 <span class="r-count">2</span></span>
+          </div>
+        </div>
+      </div>
+      <p class="demo-note">人类消息：圆形头像 + 气泡（左上 2px 直角 → 其余 14px 圆角）+ 背景 elevated + 细边框。紧凑间距 (sp-3)。</p>
+    </div>
+
+    <div class="demo-box">
+      <div class="demo-label">AI 消息 — 面板</div>
+      <div style="display:flex; gap:var(--sp-3); align-items:flex-start; margin-top: var(--sp-3);">
+        <div class="avatar avatar-md avatar-ai" style="background: linear-gradient(135deg, #7C5CFC, #5C9AFF);">T</div>
+        <div class="ai-panel-demo">
+          <div class="ai-panel-head-demo">
+            <div class="ai-agent-info-demo">
+              <span class="ai-agent-name-demo">Thomas AI</span>
+              <span class="badge badge-ai">AI</span>
+              <span class="badge badge-model">Claude-4 · 1.8s</span>
+            </div>
+          </div>
+          <div class="ai-panel-body-demo">
+            <p>分析完成。代码有 <strong>2 个性能瓶颈</strong>和 1 个潜在风险：</p>
+            <p>使用连接池替换 <code>createConnection()</code>，预计降低 80% 延迟。</p>
+          </div>
+          <div class="ai-panel-foot-demo">
+            <div class="ai-stats-demo">
+              <span class="stat-dot"></span>
+              <span>428 tokens · 1.8s</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="demo-note">AI 消息：方形头像 + 面板（顶部渐变线 2px + AI 标签 + 模型信息 + 内容 + 底栏统计）。上下留白更大 (sp-6)。面板 hover 时出现操作按钮（钉住/复制/展开）。</p>
+    </div>
+
+    <div class="demo-box" style="background: var(--bg-elevated);">
+      <div class="demo-label">关键差异对比</div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-6); margin-top: var(--sp-3);">
+        <div>
+          <div style="font: var(--text-h4); margin-bottom: var(--sp-2);">👤 人类消息</div>
+          <ul style="font: var(--text-caption); color: var(--text-secondary); line-height: 2; list-style: none;">
+            <li>• 头像形状：圆形</li>
+            <li>• 容器：气泡 (inline-block)</li>
+            <li>• 背景：--bg-elevated</li>
+            <li>• 圆角：2px / r-lg / r-lg / r-lg</li>
+            <li>• 间距：紧凑 (sp-3)</li>
+            <li>• 无顶部装饰</li>
+            <li>• 无底栏</li>
+          </ul>
+        </div>
+        <div>
+          <div style="font: var(--text-h4); margin-bottom: var(--sp-2);">🤖 AI 消息</div>
+          <ul style="font: var(--text-caption); color: var(--text-secondary); line-height: 2; list-style: none;">
+            <li>• 头像形状：圆角方形 + 渐变角标</li>
+            <li>• 容器：面板 (block, max-width)</li>
+            <li>• 背景：--ai-panel-bg</li>
+            <li>• 圆角：r-lg</li>
+            <li>• 间距：宽松 (sp-6)</li>
+            <li>• 顶部：2px 品牌渐变线</li>
+            <li>• 底栏：token/耗时 + 操作按钮</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 11 THINKING -->
+  <!-- ============================================================ -->
+  <section class="section" id="thinking">
+    <div class="section-head">
+      <span class="section-num">11</span>
+      <h2 class="section-title">AI 思考过程</h2>
+    </div>
+
+    <div class="demo-box">
+      <div class="demo-label">思考步骤轨道 (Thinking Steps)</div>
+      <div style="display:flex; gap:var(--sp-3); align-items:flex-start; margin-top: var(--sp-3);">
+        <div class="avatar avatar-md avatar-ai" style="background: linear-gradient(135deg, #7C5CFC, #5C9AFF);">T</div>
+        <div class="thinking-demo">
+          <div class="thinking-head-demo">
+            <div class="thinking-pulse-demo"></div>
+            <span class="thinking-label-demo">Thomas AI 正在分析…</span>
+          </div>
+          <div class="thinking-steps-demo">
+            <div class="think-step-demo done">
+              <div class="step-dot-demo"><svg viewBox="0 0 24 24" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+              <div class="step-info-demo">
+                <div class="step-label-demo">读取代码仓库</div>
+                <div class="step-detail-demo">src/api/webhook.ts</div>
+              </div>
+              <div class="step-time-demo">0.3s</div>
+            </div>
+            <div class="think-step-demo done">
+              <div class="step-dot-demo"><svg viewBox="0 0 24 24" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+              <div class="step-info-demo">
+                <div class="step-label-demo">AST 分析 + 依赖追踪</div>
+                <div class="step-detail-demo">发现 3 个热路径</div>
+              </div>
+              <div class="step-time-demo">1.2s</div>
+            </div>
+            <div class="think-step-demo active">
+              <div class="step-dot-demo"></div>
+              <div class="step-info-demo">
+                <div class="step-label-demo">生成优化建议…</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="demo-note">AI 思考时显示步骤轨道，类似 CI/CD pipeline。每步有三态：done（绿色勾 + 耗时）、active（紫色脉冲动画）、pending（灰色）。步骤之间用连接线串联。面板顶部渐变线有呼吸动效 (shimmer)。</p>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 12 CODE BLOCK -->
+  <!-- ============================================================ -->
+  <section class="section" id="code">
+    <div class="section-head">
+      <span class="section-num">12</span>
+      <h2 class="section-title">代码块</h2>
+    </div>
+
+    <div class="demo-box">
+      <div class="code-block-demo">
+        <div class="code-head-demo">
+          <span class="code-lang-demo">typescript</span>
+          <span style="font: 11px var(--font-mono); color: #9498A8; cursor:pointer;">⎘ Copy</span>
+        </div>
+        <div class="code-body-demo"><span class="cm">// 使用连接池替换直接连接</span>
+<span class="kw">import</span> { <span class="fn">createPool</span> } <span class="kw">from</span> <span class="str">'mysql2/promise'</span>;
+
+<span class="kw">const</span> pool = <span class="fn">createPool</span>({
+  host: <span class="str">'localhost'</span>,
+  connectionLimit: <span class="str">10</span>,
+});
+
+<span class="kw">async function</span> <span class="fn">handleWebhook</span>(payload) {
+  <span class="kw">const</span> [rows] = <span class="kw">await</span> pool.<span class="fn">query</span>(<span class="str">'SELECT * FROM agents'</span>);
+  <span class="kw">return</span> rows;
+}</div>
+      </div>
+      <p class="demo-note">代码块使用 --code-bg (最深背景) + 细边框。头部显示语言 + Copy 按钮。语法高亮：关键字紫色、函数青色、字符串蓝色、注释灰色斜体。嵌在 AI 面板内时与面板背景形成层次。</p>
+    </div>
+
+    <div class="demo-box">
+      <div class="demo-label">行内代码</div>
+      <div style="margin-top: var(--sp-3); font: var(--text-body); line-height: 1.8;">
+        使用 <code style="font: 12.5px var(--font-mono); background: rgba(124,92,252,0.08); color: var(--text-accent); padding: 1px 5px; border-radius: 3px;">createPool()</code> 替换 <code style="font: 12.5px var(--font-mono); background: rgba(124,92,252,0.08); color: var(--text-accent); padding: 1px 5px; border-radius: 3px;">createConnection()</code>
+      </div>
+      <p class="demo-note">行内代码：mono 字体 + 品牌紫色文字 + 紫色半透明背景。</p>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 13 VOICE -->
+  <!-- ============================================================ -->
+  <section class="section" id="voice">
+    <div class="section-head">
+      <span class="section-num">13</span>
+      <h2 class="section-title">语音消息</h2>
+    </div>
+
+    <div class="demo-box">
+      <div class="voice-demo">
+        <button class="voice-play-demo"><svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21"/></svg></button>
+        <div class="voice-waves-demo">
+          <div class="voice-bar-demo played" style="height:5px"></div>
+          <div class="voice-bar-demo played" style="height:10px"></div>
+          <div class="voice-bar-demo played" style="height:16px"></div>
+          <div class="voice-bar-demo played" style="height:8px"></div>
+          <div class="voice-bar-demo played" style="height:20px"></div>
+          <div class="voice-bar-demo" style="height:14px"></div>
+          <div class="voice-bar-demo" style="height:7px"></div>
+          <div class="voice-bar-demo" style="height:18px"></div>
+          <div class="voice-bar-demo" style="height:11px"></div>
+          <div class="voice-bar-demo" style="height:5px"></div>
+          <div class="voice-bar-demo" style="height:15px"></div>
+          <div class="voice-bar-demo" style="height:9px"></div>
+        </div>
+        <div class="voice-dur-demo">0:08</div>
+      </div>
+      <p class="demo-note">播放按钮用品牌渐变圆形。波形条 2px 宽，已播放部分变品牌紫色。时长用 mono 字体。</p>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 14 CONV LIST -->
+  <!-- ============================================================ -->
+  <section class="section" id="convlist">
+    <div class="section-head">
+      <span class="section-num">14</span>
+      <h2 class="section-title">对话列表</h2>
+    </div>
+
+    <div class="demo-box" style="max-width: 320px;">
+      <div class="conv-demo active">
+        <div class="avatar avatar-md avatar-group" style="background: linear-gradient(135deg, #6366F1, #8B5CF6);">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        </div>
+        <div class="conv-body-demo">
+          <div class="conv-top-demo"><span class="conv-name-demo">AI 工作群</span><span class="conv-time-demo">09:30</span></div>
+          <div class="conv-msg-demo">Thomas: 分析完成，发现 2 个问题…</div>
+        </div>
+      </div>
+
+      <div class="conv-demo">
+        <div class="avatar avatar-md avatar-ai" style="background: linear-gradient(135deg, #7C5CFC, #5C9AFF);">T
+          <span class="ai-mark"><svg viewBox="0 0 24 24" stroke-linecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></span>
+        </div>
+        <div class="conv-body-demo">
+          <div class="conv-top-demo"><span class="conv-name-demo">Thomas AI</span><span class="conv-time-demo">昨天</span></div>
+          <div class="conv-msg-demo">代码审查报告已生成 ✅</div>
+        </div>
+      </div>
+
+      <div class="conv-demo">
+        <div class="avatar avatar-md avatar-human" style="background: #0EA5E9;">J<span class="status-dot online"></span></div>
+        <div class="conv-body-demo">
+          <div class="conv-top-demo"><span class="conv-name-demo">JoJo</span><span class="conv-time-demo">昨天</span></div>
+          <div class="conv-msg-demo">没挂！我在呢 😎</div>
+        </div>
+      </div>
+
+      <div class="conv-demo">
+        <div class="avatar avatar-md avatar-group" style="background: linear-gradient(135deg, #DC2626, #F97316);">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
+        <div class="conv-body-demo">
+          <div class="conv-top-demo"><span class="conv-name-demo">Bug 反馈</span><span class="conv-time-demo">10:22</span></div>
+          <div class="conv-msg-demo">浩哥: [图片]</div>
+        </div>
+        <span class="badge-count unread">3</span>
+      </div>
+      <p class="demo-note">active 项左侧有品牌渐变指示条 (3px)。头像形状区分身份。AI 对话有渐变角标。未读用红色徽章。</p>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 15 TASK RAIL -->
+  <!-- ============================================================ -->
+  <section class="section" id="taskrail">
+    <div class="section-head">
+      <span class="section-num">15</span>
+      <h2 class="section-title">任务面板</h2>
+    </div>
+
+    <div class="demo-box" style="max-width: 340px;">
+      <div class="demo-label" style="margin-bottom: var(--sp-3);">钉住的 AI 任务（右侧 320px 可收起面板）</div>
+
+      <div class="task-card-demo" style="margin-bottom: var(--sp-2);">
+        <div class="task-card-head-demo">
+          <span class="task-agent-demo"><span class="task-agent-dot-demo" style="background: var(--brand-primary);"></span> Thomas AI</span>
+          <span class="badge badge-status done">✓ 完成</span>
+        </div>
+        <div class="task-card-body-demo">Webhook 代码性能分析：发现 2 个瓶颈，已给出修复方案</div>
+        <div class="task-card-foot-demo"><span>428 tokens · 1.8s</span><span>09:30</span></div>
+      </div>
+
+      <div class="task-card-demo" style="margin-bottom: var(--sp-2);">
+        <div class="task-card-head-demo">
+          <span class="task-agent-demo"><span class="task-agent-dot-demo" style="background: var(--green);"></span> 花花</span>
+          <span class="badge badge-status done">✓ 完成</span>
+        </div>
+        <div class="task-card-body-demo">设计系统 v4：色彩、组件、消息规范</div>
+        <div class="task-card-foot-demo"><span>design-system-v4.html</span><span>08:00</span></div>
+      </div>
+
+      <div class="task-card-demo">
+        <div class="task-card-head-demo">
+          <span class="task-agent-demo"><span class="task-agent-dot-demo" style="background: var(--amber);"></span> BotFather</span>
+          <span class="badge badge-status running">⟳ 运行中</span>
+        </div>
+        <div class="task-card-body-demo">每日用量统计报告生成中…</div>
+        <div class="task-card-foot-demo"><span>预计 ~3s</span><span>09:45</span></div>
+      </div>
+
+      <p class="demo-note">AI 输出可"钉住"到任务面板，不被消息流淹没。每张卡片显示 Agent 名 + 状态 + 摘要 + 统计信息。面板默认隐藏，点击 Chat Header 的面板按钮展开 (320px)，带 0.4s 滑出动画。</p>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 16 NAV RAIL -->
+  <!-- ============================================================ -->
+  <section class="section" id="navrail">
+    <div class="section-head">
+      <span class="section-num">16</span>
+      <h2 class="section-title">Nav Rail</h2>
+    </div>
+
+    <div class="demo-box">
+      <div class="demo-label">导航栏规范 (60px 宽)</div>
+      <div style="display:flex; gap:var(--sp-6); margin-top: var(--sp-3); align-items:flex-start;">
+        <!-- Nav rail demo -->
+        <div style="width:52px; background:var(--bg-deep); border-radius:var(--r-md); padding:var(--sp-3) 0; display:flex; flex-direction:column; align-items:center; gap:var(--sp-1); border:1px solid var(--border-subtle);">
+          <!-- Logo -->
+          <div style="width:34px;height:34px;border-radius:var(--r-md);background:var(--brand-gradient);display:flex;align-items:center;justify-content:center;margin-bottom:var(--sp-6);">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+          </div>
+          <!-- Active item -->
+          <div style="width:38px;height:38px;border-radius:var(--r-md);background:var(--bg-elevated);display:flex;align-items:center;justify-content:center;position:relative;">
+            <div style="position:absolute;left:-1px;top:50%;transform:translateY(-50%);width:3px;height:18px;border-radius:0 3px 3px 0;background:var(--brand-gradient);"></div>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-primary)" stroke-width="1.6" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          </div>
+          <!-- Normal item -->
+          <div style="width:38px;height:38px;border-radius:var(--r-md);display:flex;align-items:center;justify-content:center;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="1.6" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+          </div>
+          <div style="width:38px;height:38px;border-radius:var(--r-md);display:flex;align-items:center;justify-content:center;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v2m0 16v2m-7-7H3m18 0h-2"/></svg>
+          </div>
+        </div>
+        <!-- Specs -->
+        <div style="flex:1;">
+          <ul style="font: var(--text-caption); color: var(--text-secondary); line-height: 2.2; list-style: none;">
+            <li>• 宽度：<code style="font:11px var(--font-mono);color:var(--text-accent);">60px</code>，背景 <code style="font:11px var(--font-mono);color:var(--text-accent);">--bg-deep</code></li>
+            <li>• Logo：<code style="font:11px var(--font-mono);color:var(--text-accent);">34×34px</code>，品牌渐变方形 (r-md)，hover 时 scale(1.08)</li>
+            <li>• 导航按钮：<code style="font:11px var(--font-mono);color:var(--text-accent);">38×38px</code>，r-md 圆角，图标 20px stroke 1.6</li>
+            <li>• 默认态：透明背景，<code style="font:11px var(--font-mono);color:var(--text-accent);">--text-tertiary</code> 颜色</li>
+            <li>• Hover 态：<code style="font:11px var(--font-mono);color:var(--text-accent);">--bg-hover</code> 背景，text-secondary 颜色</li>
+            <li>• Active 态：<code style="font:11px var(--font-mono);color:var(--text-accent);">--bg-elevated</code> 背景 + 左侧 3px 品牌渐变指示条 (18px 高)</li>
+            <li>• 未读 badge：右上角 7px 红点，border 2px --bg-deep</li>
+            <li>• 底部：设置按钮 + 用户头像 (30px 圆形)</li>
+            <li>• 分隔线：20px 宽，1px，--border-default</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 16.5 ICON SPEC -->
+  <!-- ============================================================ -->
+  <section class="section" id="icons">
+    <div class="section-head">
+      <span class="section-num">16.5</span>
+      <h2 class="section-title">图标规范</h2>
+    </div>
+
+    <div class="demo-box">
+      <div class="demo-label">统一 SVG Stroke 风格</div>
+      <div style="display:flex; gap:var(--sp-6); margin-top:var(--sp-3); flex-wrap:wrap;">
+        <!-- Icon samples -->
+        <div style="text-align:center;">
+          <div style="width:40px;height:40px;border-radius:var(--r-md);background:var(--bg-hover);display:flex;align-items:center;justify-content:center;margin:0 auto var(--sp-1);">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-primary)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          </div>
+          <span style="font:var(--text-mono-sm);color:var(--text-tertiary);">Nav 20px</span>
+        </div>
+        <div style="text-align:center;">
+          <div style="width:32px;height:32px;border-radius:var(--r-sm);background:var(--bg-hover);display:flex;align-items:center;justify-content:center;margin:0 auto var(--sp-1);">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          </div>
+          <span style="font:var(--text-mono-sm);color:var(--text-tertiary);">Btn 16px</span>
+        </div>
+        <div style="text-align:center;">
+          <div style="width:28px;height:28px;border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;margin:0 auto var(--sp-1);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
+          </div>
+          <span style="font:var(--text-mono-sm);color:var(--text-tertiary);">Tab 14px</span>
+        </div>
+      </div>
+      <ul style="font:var(--text-caption); color:var(--text-secondary); line-height:2.2; list-style:none; margin-top:var(--sp-3);">
+        <li>• <strong>风格</strong>：全部用 SVG stroke icons，<strong>不混用 emoji</strong></li>
+        <li>• <strong>参数</strong>：<code style="font:11px var(--font-mono);color:var(--text-accent);">stroke-width: 1.6~1.8</code>，<code style="font:11px var(--font-mono);color:var(--text-accent);">stroke-linecap/linejoin: round</code>，<code style="font:11px var(--font-mono);color:var(--text-accent);">fill: none</code></li>
+        <li>• <strong>图标源</strong>：<a href="https://www.iconfont.cn/" style="color:var(--text-accent);">iconfont.cn</a> 找合适的，保持风格一致</li>
+        <li>• <strong>尺寸</strong>：Nav 按钮 20px / 功能按钮 16px / Tab/小图标 14px / 结果列表 16~18px</li>
+        <li>• <strong>颜色</strong>：跟随 <code style="font:11px var(--font-mono);color:var(--text-accent);">currentColor</code>，由父元素控制</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 17 FORM COMPONENTS -->
+  <!-- ============================================================ -->
+  <section class="section" id="forms">
+    <div class="section-head">
+      <span class="section-num">17</span>
+      <h2 class="section-title">表单组件</h2>
+    </div>
+
+    <div class="demo-box">
+      <div class="demo-label">表单输入框（带 Label）</div>
+      <div style="max-width:360px; margin-top: var(--sp-3);">
+        <div style="margin-bottom: var(--sp-4);">
+          <label style="display:block; font:var(--text-caption); font-weight:500; color:var(--text-secondary); margin-bottom:var(--sp-1);">邮箱 / 用户名</label>
+          <input class="input" placeholder="输入邮箱或用户名">
+        </div>
+        <div style="margin-bottom: var(--sp-4);">
+          <label style="display:block; font:var(--text-caption); font-weight:500; color:var(--text-secondary); margin-bottom:var(--sp-1);">密码</label>
+          <input class="input" type="password" placeholder="输入密码">
+        </div>
+        <div>
+          <label style="display:block; font:var(--text-caption); font-weight:500; color:var(--text-secondary); margin-bottom:var(--sp-1);">验证码</label>
+          <div style="display:flex; gap:var(--sp-2);">
+            <input class="input" placeholder="输入验证码" style="flex:1;">
+            <button class="btn btn-secondary btn-sm" style="white-space:nowrap; padding:0 var(--sp-4); height:36px;">发送验证码</button>
+          </div>
+        </div>
+      </div>
+      <p class="demo-note">Label：12px Medium，text-secondary，margin-bottom 4px。输入框：36px 高，r-md 圆角，bg-elevated，border-default 边框，focus 时品牌色 glow。验证码行用 flex 横排。</p>
+    </div>
+
+    <div class="demo-box">
+      <div class="demo-label">Tab 切换器</div>
+      <div style="max-width:360px; margin-top: var(--sp-3);">
+        <div style="display:flex; background:var(--bg-deep); border-radius:var(--r-md); padding:3px;">
+          <button style="flex:1; padding:9px 0; font:500 14px var(--font-sans); color:var(--text-primary); background:var(--bg-elevated); border:none; border-radius:var(--r-sm); cursor:pointer; box-shadow:var(--shadow-sm);">登录</button>
+          <button style="flex:1; padding:9px 0; font:500 14px var(--font-sans); color:var(--text-tertiary); background:transparent; border:none; border-radius:var(--r-sm); cursor:pointer;">注册</button>
+        </div>
+      </div>
+      <p class="demo-note">容器：bg-deep，r-md 圆角，3px padding。Active tab：bg-elevated + shadow-sm + text-primary。Inactive：透明 + text-tertiary。</p>
+    </div>
+
+    <div class="demo-box">
+      <div class="demo-label">分割线（带文字）</div>
+      <div style="max-width:360px; margin-top: var(--sp-3);">
+        <div style="display:flex; align-items:center; gap:var(--sp-3); margin:var(--sp-4) 0;">
+          <div style="flex:1; height:1px; background:var(--border-subtle);"></div>
+          <span style="font:var(--text-caption); color:var(--text-tertiary);">或</span>
+          <div style="flex:1; height:1px; background:var(--border-subtle);"></div>
+        </div>
+      </div>
+      <p class="demo-note">左右 1px 线 (border-subtle) + 中间文字 (caption, text-tertiary)。</p>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 18 CONVERSATION ITEM STATES -->
+  <!-- ============================================================ -->
+  <section class="section" id="convstates">
+    <div class="section-head">
+      <span class="section-num">18</span>
+      <h2 class="section-title">对话项状态</h2>
+    </div>
+
+    <div class="demo-box" style="max-width:360px;">
+      <div class="demo-label">状态标识规范</div>
+
+      <!-- Unread -->
+      <div style="display:flex; align-items:center; gap:var(--sp-3); padding:var(--sp-2) 0; border-bottom:1px solid var(--border-subtle);">
+        <span class="badge-count" style="background:var(--brand-primary);">3</span>
+        <div><div style="font:var(--text-caption);font-weight:600;">未读计数</div><div style="font:var(--text-mono-sm);color:var(--text-tertiary);">品牌色圆角胶囊，min-width 16px</div></div>
+      </div>
+
+      <!-- Muted unread -->
+      <div style="display:flex; align-items:center; gap:var(--sp-3); padding:var(--sp-2) 0; border-bottom:1px solid var(--border-subtle);">
+        <span class="badge-count" style="background:var(--text-tertiary);">23</span>
+        <div><div style="font:var(--text-caption);font-weight:600;">静音未读</div><div style="font:var(--text-mono-sm);color:var(--text-tertiary);">text-tertiary 灰色，降低视觉优先级</div></div>
+      </div>
+
+      <!-- Mention -->
+      <div style="display:flex; align-items:center; gap:var(--sp-3); padding:var(--sp-2) 0; border-bottom:1px solid var(--border-subtle);">
+        <span style="display:inline-flex;font:600 10px var(--font-sans);color:var(--red);background:var(--red-bg);padding:1px 5px;border-radius:var(--r-xs);">@我</span>
+        <div><div style="font:var(--text-caption);font-weight:600;">@提及</div><div style="font:var(--text-mono-sm);color:var(--text-tertiary);">红色文字 + 红色半透明背景</div></div>
+      </div>
+
+      <!-- Draft -->
+      <div style="display:flex; align-items:center; gap:var(--sp-3); padding:var(--sp-2) 0; border-bottom:1px solid var(--border-subtle);">
+        <span style="font:500 12px var(--font-sans);color:var(--red);">[草稿]</span>
+        <div><div style="font:var(--text-caption);font-weight:600;">草稿</div><div style="font:var(--text-mono-sm);color:var(--text-tertiary);">红色文字，置于预览文本前</div></div>
+      </div>
+
+      <!-- Pinned -->
+      <div style="display:flex; align-items:center; gap:var(--sp-3); padding:var(--sp-2) 0; border-bottom:1px solid var(--border-subtle);">
+        <span style="font-size:14px;">📌</span>
+        <div><div style="font:var(--text-caption);font-weight:600;">置顶</div><div style="font:var(--text-mono-sm);color:var(--text-tertiary);">分区标签"📌 置顶" + 右上角 4px 品牌色小点</div></div>
+      </div>
+
+      <!-- Section label -->
+      <div style="display:flex; align-items:center; gap:var(--sp-3); padding:var(--sp-2) 0;">
+        <span style="font:600 11px var(--font-sans);color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;">最近</span>
+        <div><div style="font:var(--text-caption);font-weight:600;">分区标签</div><div style="font:var(--text-mono-sm);color:var(--text-tertiary);">11px SemiBold，text-tertiary，大写</div></div>
+      </div>
+    </div>
+
+    <div class="demo-box" style="max-width:360px;">
+      <div class="demo-label">对话项交互状态</div>
+      <ul style="font:var(--text-caption); color:var(--text-secondary); line-height:2.2; list-style:none; margin-top:var(--sp-3);">
+        <li>• 默认：透明背景</li>
+        <li>• Hover：<code style="font:11px var(--font-mono);color:var(--text-accent);">--bg-hover</code></li>
+        <li>• Active/选中：<code style="font:11px var(--font-mono);color:var(--text-accent);">--bg-elevated</code> + 左侧 3px 品牌渐变指示条</li>
+        <li>• 未读项：名称 font-weight 加粗到 600，预览色提升到 text-secondary</li>
+        <li>• 圆角：<code style="font:11px var(--font-mono);color:var(--text-accent);">r-md (10px)</code></li>
+        <li>• 内边距：<code style="font:11px var(--font-mono);color:var(--text-accent);">sp-2 (8px)</code>，项间距 1px</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 19 MODAL / OVERLAY -->
+  <!-- ============================================================ -->
+  <section class="section" id="modal">
+    <div class="section-head">
+      <span class="section-num">19</span>
+      <h2 class="section-title">弹窗 & Overlay</h2>
+    </div>
+
+    <div class="demo-box">
+      <div class="demo-label">搜索弹窗 (⌘K)</div>
+      <div style="margin-top:var(--sp-3); position:relative;">
+        <!-- Mini overlay demo -->
+        <div style="background:rgba(0,0,0,0.5); border-radius:var(--r-lg); padding:var(--sp-8) var(--sp-6); backdrop-filter:blur(4px);">
+          <div style="max-width:460px; margin:0 auto; background:var(--bg-elevated); border:1px solid var(--border-default); border-radius:var(--r-xl); overflow:hidden; box-shadow:var(--shadow-lg);">
+            <!-- Search input -->
+            <div style="padding:var(--sp-3) var(--sp-4); display:flex; align-items:center; gap:var(--sp-2); border-bottom:1px solid var(--border-subtle);">
+              <span style="color:var(--text-tertiary);">🔍</span>
+              <span style="font:var(--text-body); color:var(--text-tertiary); flex:1;">搜索消息、联系人、群组…</span>
+              <span style="font:500 10px var(--font-mono); color:var(--text-tertiary); background:var(--bg-hover); padding:2px 6px; border-radius:var(--r-sm); border:1px solid var(--border-subtle);">⌘K</span>
+            </div>
+            <!-- Tabs -->
+            <div style="display:flex; border-bottom:1px solid var(--border-subtle);">
+              <span style="padding:var(--sp-2) var(--sp-4); font:500 13px var(--font-sans); color:var(--text-primary); position:relative;">聊天<span style="position:absolute;bottom:-1px;left:var(--sp-3);right:var(--sp-3);height:2px;background:var(--brand-gradient);border-radius:1px;"></span></span>
+              <span style="padding:var(--sp-2) var(--sp-4); font:500 13px var(--font-sans); color:var(--text-tertiary);">联系人</span>
+              <span style="padding:var(--sp-2) var(--sp-4); font:500 13px var(--font-sans); color:var(--text-tertiary);">群组</span>
+              <span style="padding:var(--sp-2) var(--sp-4); font:500 13px var(--font-sans); color:var(--text-tertiary);">文件</span>
+            </div>
+            <!-- Empty state -->
+            <div style="padding:var(--sp-10) var(--sp-6); text-align:center;">
+              <div style="font-size:32px; margin-bottom:var(--sp-3); opacity:0.4;">💬</div>
+              <div style="font:500 14px var(--font-sans); color:var(--text-secondary); margin-bottom:var(--sp-1);">搜索聊天记录</div>
+              <div style="font:var(--text-caption); color:var(--text-tertiary);">输入关键词查找历史消息</div>
+            </div>
+            <!-- Footer -->
+            <div style="padding:var(--sp-2) var(--sp-4); border-top:1px solid var(--border-subtle); display:flex; gap:var(--sp-4);">
+              <span style="font:var(--text-mono-sm); color:var(--text-tertiary); display:flex; align-items:center; gap:3px;"><span style="font:500 10px var(--font-mono); background:var(--bg-hover); padding:1px 4px; border-radius:3px; border:1px solid var(--border-subtle);">↑↓</span> 导航</span>
+              <span style="font:var(--text-mono-sm); color:var(--text-tertiary); display:flex; align-items:center; gap:3px;"><span style="font:500 10px var(--font-mono); background:var(--bg-hover); padding:1px 4px; border-radius:3px; border:1px solid var(--border-subtle);">↵</span> 打开</span>
+              <span style="font:var(--text-mono-sm); color:var(--text-tertiary); display:flex; align-items:center; gap:3px;"><span style="font:500 10px var(--font-mono); background:var(--bg-hover); padding:1px 4px; border-radius:3px; border:1px solid var(--border-subtle);">Esc</span> 关闭</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="demo-note">Overlay：rgba(0,0,0,0.5) + backdrop-filter: blur(4px)。弹窗：bg-elevated，r-xl 圆角，shadow-lg + 品牌色微光。入场动画：0.25s translateY(-12px) + scale(0.97) + fadeIn。最大宽度 620px，距顶 12vh。</p>
+    </div>
+
+    <div class="demo-box">
+      <div class="demo-label">键盘快捷键标签 (kbd)</div>
+      <div class="comp-row" style="gap:var(--sp-4); margin-top:var(--sp-3);">
+        <span style="font:500 10px var(--font-mono); color:var(--text-tertiary); background:var(--bg-hover); padding:2px 6px; border-radius:var(--r-sm); border:1px solid var(--border-subtle);">⌘K</span>
+        <span style="font:500 10px var(--font-mono); color:var(--text-tertiary); background:var(--bg-hover); padding:2px 6px; border-radius:var(--r-sm); border:1px solid var(--border-subtle);">↵</span>
+        <span style="font:500 10px var(--font-mono); color:var(--text-tertiary); background:var(--bg-hover); padding:2px 6px; border-radius:var(--r-sm); border:1px solid var(--border-subtle);">Esc</span>
+        <span style="font:500 10px var(--font-mono); color:var(--text-tertiary); background:var(--bg-hover); padding:2px 6px; border-radius:var(--r-sm); border:1px solid var(--border-subtle);">Tab</span>
+        <span style="font:500 10px var(--font-mono); color:var(--text-tertiary); background:var(--bg-hover); padding:2px 6px; border-radius:var(--r-sm); border:1px solid var(--border-subtle);">↑↓</span>
+      </div>
+      <p class="demo-note">Mono 10px Medium，bg-hover 背景，border-subtle 边框，r-sm 圆角。</p>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 20 EMPTY STATES -->
+  <!-- ============================================================ -->
+  <section class="section" id="empty">
+    <div class="section-head">
+      <span class="section-num">20</span>
+      <h2 class="section-title">空状态</h2>
+    </div>
+
+    <div class="demo-box">
+      <div style="text-align:center; padding:var(--sp-10) var(--sp-6);">
+        <!-- Icon circle -->
+        <div style="width:72px;height:72px;border-radius:50%;background:var(--brand-gradient-subtle);display:flex;align-items:center;justify-content:center;margin:0 auto var(--sp-4);position:relative;">
+          <div style="position:absolute;inset:-6px;border-radius:50%;border:1px dashed var(--border-default);"></div>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--brand-primary)" stroke-width="1.5" stroke-linecap="round" style="opacity:0.6;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <div style="font:500 15px var(--font-sans); color:var(--text-secondary); margin-bottom:var(--sp-1);">选择一个会话开始</div>
+        <div style="font:var(--text-caption); color:var(--text-tertiary); max-width:280px; margin:0 auto; line-height:1.6;">从左侧选择会话，或创建新的对话。支持私聊、群聊和 AI Agent 会话。</div>
+        <!-- Shortcuts -->
+        <div style="display:flex; gap:var(--sp-3); justify-content:center; margin-top:var(--sp-5);">
+          <div style="display:flex;align-items:center;gap:var(--sp-1);font:var(--text-caption);color:var(--text-tertiary);padding:var(--sp-1) var(--sp-3);border-radius:var(--r-md);background:var(--bg-elevated);border:1px solid var(--border-subtle);">
+            <span style="font:500 10px var(--font-mono);background:var(--bg-deep);padding:1px 4px;border-radius:3px;">⌘</span>
+            <span style="font:500 10px var(--font-mono);background:var(--bg-deep);padding:1px 4px;border-radius:3px;">N</span>
+            新建
+          </div>
+          <div style="display:flex;align-items:center;gap:var(--sp-1);font:var(--text-caption);color:var(--text-tertiary);padding:var(--sp-1) var(--sp-3);border-radius:var(--r-md);background:var(--bg-elevated);border:1px solid var(--border-subtle);">
+            <span style="font:500 10px var(--font-mono);background:var(--bg-deep);padding:1px 4px;border-radius:3px;">⌘</span>
+            <span style="font:500 10px var(--font-mono);background:var(--bg-deep);padding:1px 4px;border-radius:3px;">K</span>
+            搜索
+          </div>
+        </div>
+      </div>
+      <p class="demo-note">结构：品牌色半透明圆形图标（72px，gradient-subtle 背景 + 虚线外圈旋转动画）→ 标题（15px Medium，text-secondary）→ 描述（caption，text-tertiary，max-width 280px）→ 可选快捷键按钮。整体居中，padding sp-10。</p>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 21 BACKGROUND ATMOSPHERE -->
+  <!-- ============================================================ -->
+  <section class="section" id="atmosphere">
+    <div class="section-head">
+      <span class="section-num">21</span>
+      <h2 class="section-title">背景氛围</h2>
+    </div>
+
+    <div class="demo-box">
+      <div class="demo-label">光晕 Orbs + 网格（用于登录页等全屏页面）</div>
+      <div style="position:relative; height:200px; border-radius:var(--r-md); overflow:hidden; background:var(--bg-deep); margin-top:var(--sp-3);">
+        <!-- Grid -->
+        <div style="position:absolute;inset:0;background-image:linear-gradient(var(--border-subtle) 1px, transparent 1px),linear-gradient(90deg, var(--border-subtle) 1px, transparent 1px);background-size:60px 60px;opacity:0.4;mask-image:radial-gradient(ellipse 70% 70% at 50% 50%, black, transparent);-webkit-mask-image:radial-gradient(ellipse 70% 70% at 50% 50%, black, transparent);"></div>
+        <!-- Orb 1 -->
+        <div style="position:absolute;width:300px;height:300px;border-radius:50%;filter:blur(80px);opacity:0.12;background:radial-gradient(circle, #7C5CFC, transparent 70%);top:-100px;right:-50px;"></div>
+        <!-- Orb 2 -->
+        <div style="position:absolute;width:250px;height:250px;border-radius:50%;filter:blur(80px);opacity:0.1;background:radial-gradient(circle, #00D4AA, transparent 70%);bottom:-80px;left:-50px;"></div>
+      </div>
+      <p class="demo-note">用于登录页等全屏背景。光晕 Orb：品牌色 radial-gradient + blur(100px) + opacity 0.1~0.15。网格：border-subtle 1px 线，60px 间距，radial mask 淡出。粒子（可选）：品牌色 4px 圆点，opacity 0.15，float 动画 16~24s。</p>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 22 PAGES -->
+  <!-- ============================================================ -->
+  <section class="section" id="pages">
+    <div class="section-head">
+      <span class="section-num">22</span>
+      <h2 class="section-title">页面汇总</h2>
+    </div>
+
+    <div class="demo-box">
+      <table style="width:100%; border-collapse:collapse; font: var(--text-caption);">
+        <thead>
+          <tr style="border-bottom: 1px solid var(--border-default);">
+            <th style="text-align:left; padding: var(--sp-2) var(--sp-3); color: var(--text-tertiary); font-weight:600;">页面</th>
+            <th style="text-align:left; padding: var(--sp-2) var(--sp-3); color: var(--text-tertiary); font-weight:600;">文件</th>
+            <th style="text-align:left; padding: var(--sp-2) var(--sp-3); color: var(--text-tertiary); font-weight:600;">状态</th>
+            <th style="text-align:left; padding: var(--sp-2) var(--sp-3); color: var(--text-tertiary); font-weight:600;">说明</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom: 1px solid var(--border-subtle);">
+            <td style="padding: var(--sp-2) var(--sp-3); font-weight:500;">🎨 设计系统</td>
+            <td style="padding: var(--sp-2) var(--sp-3);"><code style="font: 11px var(--font-mono); color: var(--text-accent);">design-system-v4.html</code></td>
+            <td style="padding: var(--sp-2) var(--sp-3);"><span class="badge badge-status done">✓ v4</span></td>
+            <td style="padding: var(--sp-2) var(--sp-3); color: var(--text-secondary);">本文件 — Token/组件/规范汇总</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border-subtle);">
+            <td style="padding: var(--sp-2) var(--sp-3); font-weight:500;">💬 聊天页</td>
+            <td style="padding: var(--sp-2) var(--sp-3);"><code style="font: 11px var(--font-mono); color: var(--text-accent);">chat-v4.html</code></td>
+            <td style="padding: var(--sp-2) var(--sp-3);"><span class="badge badge-status done">✓ v4</span></td>
+            <td style="padding: var(--sp-2) var(--sp-3); color: var(--text-secondary);">核心聊天页 — 人类气泡 + AI 面板 + 思考轨道 + 任务面板</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border-subtle);">
+            <td style="padding: var(--sp-2) var(--sp-3); font-weight:500;">🔐 登录/注册</td>
+            <td style="padding: var(--sp-2) var(--sp-3);"><code style="font: 11px var(--font-mono); color: var(--text-accent);">login.html</code></td>
+            <td style="padding: var(--sp-2) var(--sp-3);"><span class="badge badge-status done">✓ v4</span></td>
+            <td style="padding: var(--sp-2) var(--sp-3); color: var(--text-secondary);">登录/注册双面板、扫码登录、背景氛围</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border-subtle);">
+            <td style="padding: var(--sp-2) var(--sp-3); font-weight:500;">🔍 搜索</td>
+            <td style="padding: var(--sp-2) var(--sp-3);"><code style="font: 11px var(--font-mono); color: var(--text-accent);">search.html</code></td>
+            <td style="padding: var(--sp-2) var(--sp-3);"><span class="badge badge-status done">✓ v4</span></td>
+            <td style="padding: var(--sp-2) var(--sp-3); color: var(--text-secondary);">全局搜索 ⌘K、4 Tab、AI 方形头像</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border-subtle);">
+            <td style="padding: var(--sp-2) var(--sp-3); font-weight:500;">📋 对话列表</td>
+            <td style="padding: var(--sp-2) var(--sp-3);"><code style="font: 11px var(--font-mono); color: var(--text-accent);">conversation-list.html</code></td>
+            <td style="padding: var(--sp-2) var(--sp-3);"><span class="badge badge-status done">✓ v4</span></td>
+            <td style="padding: var(--sp-2) var(--sp-3); color: var(--text-secondary);">对话列表、筛选 chips、AI 方形头像+角标</td>
+          </tr>
+          <tr>
+            <td style="padding: var(--sp-2) var(--sp-3); font-weight:500;">📄 汇总首页</td>
+            <td style="padding: var(--sp-2) var(--sp-3);"><code style="font: 11px var(--font-mono); color: var(--text-accent);">index.html</code></td>
+            <td style="padding: var(--sp-2) var(--sp-3);"><span class="badge badge-status done">✓ v4</span></td>
+            <td style="padding: var(--sp-2) var(--sp-3); color: var(--text-secondary);">页面导航入口、6 条设计原则</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="demo-box">
+      <div class="demo-label">v3 → v4 升级清单</div>
+      <ul style="font: var(--text-body); color: var(--text-secondary); line-height: 2; list-style: none; margin-top: var(--sp-3);">
+        <li>✅ 品牌色：从 <code style="font: 12px var(--font-mono); color: var(--text-tertiary);">#8B5CF6→#06B6D4</code> 调整为 <code style="font: 12px var(--font-mono); color: var(--text-accent);">#7C5CFC→#00D4AA</code></li>
+        <li>✅ AI 消息：从"气泡+左侧竖条"升级为独立面板（头部+内容+底栏）</li>
+        <li>✅ AI 思考：从折叠文字升级为步骤轨道动画</li>
+        <li>✅ 输入框：新增 AI 模式变形（渐变边框 + Agent 上下文条）</li>
+        <li>✅ 任务面板：新增右侧可展开面板，钉住 AI 产出</li>
+        <li>✅ 头像规则：人类圆形 / AI 方形+渐变角标 / 群组大圆角方形</li>
+        <li>✅ 暗色背景层级微调（更深的 deep → 更明确的层次感）</li>
+        <li>✅ 登录/注册页升级到 v4 token</li>
+        <li>✅ 搜索/Cmd+K 页升级到 v4 token</li>
+        <li>✅ 对话列表升级到 v4 token + 头像规则</li>
+        <li>✅ 汇总首页升级到 v4</li>
+        <li>⬜ 移动端适配</li>
+      </ul>
+    </div>
+  </section>
+
+</div>
+
+<button class="theme-fab" onclick="toggleTheme()" title="切换主题">🌙</button>
+
+<script>
+function toggleTheme() {
+  const html = document.documentElement;
+  const fab = document.querySelector('.theme-fab');
+  if (html.dataset.theme === 'light') {
+    html.dataset.theme = 'dark';
+    fab.textContent = '🌙';
+  } else {
+    html.dataset.theme = 'light';
+    fab.textContent = '🌞';
+  }
+}
+</script>
+</body>
+</html>
