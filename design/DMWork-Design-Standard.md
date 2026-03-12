@@ -15,18 +15,7 @@
 
 ## 背景层级
 
-### 暗色（默认）
-
-| Token | 值 | 用途 |
-|-------|-----|------|
-| `--bg-deep` | `#111318` | Nav Rail、页面最深层 |
-| `--bg-base` | `#171921` | Sidebar、AI 面板 |
-| `--bg-surface` | `#1E212B` | Chat 主区域 |
-| `--bg-elevated` | `#262A36` | 气泡、输入框、卡片 |
-| `--bg-hover` | `#2E3240` | Hover 态 |
-| `--bg-active` | `#363B4A` | Active/选中态 |
-
-### 亮色
+### 亮色（默认）
 
 | Token | 值 | 用途 |
 |-------|-----|------|
@@ -37,6 +26,17 @@
 | `--bg-hover` | `#EAEBF0` | Hover 态 |
 | `--bg-active` | `#E2E3EA` | Active/选中态 |
 | AI 面板 | `#FAFAFF` | 微紫白 |
+
+### 暗色
+
+| Token | 值 | 用途 |
+|-------|-----|------|
+| `--bg-deep` | `#111318` | Nav Rail、页面最深层 |
+| `--bg-base` | `#171921` | Sidebar、AI 面板 |
+| `--bg-surface` | `#1E212B` | Chat 主区域 |
+| `--bg-elevated` | `#262A36` | 气泡、输入框、卡片 |
+| `--bg-hover` | `#2E3240` | Hover 态 |
+| `--bg-active` | `#363B4A` | Active/选中态 |
 
 ---
 
