@@ -515,6 +515,77 @@
       margin-top: var(--sp-3);
     }
     .approval-actions .btn { flex: 1; }
+    
+    /* Interactive Prototype */
+    .prototype-container {
+      display: flex;
+      gap: var(--sp-4);
+      margin: var(--sp-4) 0;
+      min-height: 480px;
+    }
+    .proto-list {
+      width: 320px;
+      background: var(--bg-base);
+      border: 1px solid var(--border-default);
+      border-radius: var(--r-lg);
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .proto-header {
+      padding: var(--sp-3) var(--sp-4);
+      border-bottom: 1px solid var(--border-subtle);
+      font: var(--text-body-medium);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .proto-botfather {
+      display: flex; align-items: center; gap: var(--sp-3);
+      padding: var(--sp-3) var(--sp-4);
+      background: var(--brand-gradient);
+      color: white;
+      cursor: pointer;
+      transition: opacity var(--dur);
+    }
+    .proto-botfather:hover { opacity: 0.9; }
+    .proto-item {
+      display: flex; align-items: center;
+      padding: var(--sp-2) var(--sp-4);
+      gap: var(--sp-3);
+      border-bottom: 1px solid var(--border-subtle);
+      cursor: pointer;
+      transition: background var(--dur);
+    }
+    .proto-item:hover { background: var(--bg-hover); }
+    .proto-item.active { background: var(--bg-active); }
+    .proto-item:last-child { border-bottom: none; }
+    .proto-item.hidden { display: none; }
+    .proto-name { font: var(--text-body-medium); display: flex; align-items: center; gap: var(--sp-2); }
+    
+    .proto-card-area {
+      flex: 1;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: var(--sp-4);
+      background: var(--bg-elevated);
+      border-radius: var(--r-lg);
+      border: 1px dashed var(--border-default);
+    }
+    .proto-empty {
+      text-align: center;
+      padding: var(--sp-10);
+    }
+    .proto-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-default);
+      border-radius: var(--r-lg);
+      max-width: 300px;
+      overflow: hidden;
+      animation: cardIn 0.2s var(--ease);
+    }
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
   </style>
 </head>
 <body>
@@ -572,6 +643,241 @@
           <li>作为用户，我希望快速找到 BotFather</li>
           <li>作为 Owner，我希望收到并审批加好友申请</li>
         </ul>
+        
+        <h2>交互原型</h2>
+        <p>点击列表项查看名片，切换筛选器更新列表。</p>
+        
+        <div class="prototype-container">
+          <!-- 左侧：通讯录列表 -->
+          <div class="proto-list">
+            <div class="proto-header">
+              <span style="display: flex; align-items: center; gap: var(--sp-2);">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                通讯录
+              </span>
+              <select class="filter-select" id="proto-filter" onchange="filterList()">
+                <option value="all">全部</option>
+                <option value="my-bot">我的 Bot</option>
+                <option value="all-bot">所有 Bot</option>
+                <option value="people">所有员工</option>
+                <option value="group">群聊</option>
+              </select>
+            </div>
+            
+            <!-- BotFather Banner -->
+            <div class="proto-botfather" onclick="showCard('botfather')">
+              <div class="botfather-icon">
+                <svg viewBox="0 0 24 24" width="20" height="20" stroke="white" stroke-width="1.6" fill="none"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+              </div>
+              <div class="botfather-info">
+                <div class="botfather-name">BotFather</div>
+                <div class="botfather-desc">创建和管理你的 AI 机器人</div>
+              </div>
+            </div>
+            
+            <!-- 搜索框 -->
+            <div style="padding: var(--sp-3) var(--sp-4); border-bottom: 1px solid var(--border-subtle);">
+              <input type="text" class="search-input" placeholder="🔍 搜索通讯录" id="proto-search" oninput="filterList()">
+            </div>
+            
+            <!-- 列表 -->
+            <div id="proto-items">
+              <div class="proto-item" data-type="bot" data-id="abai" onclick="showCard('abai')">
+                <div class="avatar avatar-md avatar-ai" style="background: linear-gradient(135deg, #7C5CFC, #5C9AFF);">阿
+                  <span class="ai-mark"><svg viewBox="0 0 24 24" stroke-linecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></span>
+                </div>
+                <div class="proto-name">阿白 <span class="badge-ai">AI</span></div>
+              </div>
+              <div class="proto-item" data-type="people" data-id="zhangsan" onclick="showCard('zhangsan')">
+                <div class="avatar avatar-md avatar-human" style="background: #0EA5E9;">张</div>
+                <div class="proto-name">张三</div>
+              </div>
+              <div class="proto-item" data-type="bot" data-id="xiaomiao" onclick="showCard('xiaomiao')">
+                <div class="avatar avatar-md avatar-ai" style="background: linear-gradient(135deg, #F59E0B, #EF4444);">小
+                  <span class="ai-mark"><svg viewBox="0 0 24 24" stroke-linecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></span>
+                </div>
+                <div class="proto-name">小苗 <span class="badge-ai">AI</span></div>
+              </div>
+              <div class="proto-item" data-type="people" data-id="lisi" onclick="showCard('lisi')">
+                <div class="avatar avatar-md avatar-human" style="background: #EF4444;">李</div>
+                <div class="proto-name">李四</div>
+              </div>
+              <div class="proto-item" data-type="group" data-id="devgroup" onclick="showCard('devgroup')">
+                <div class="avatar avatar-md avatar-group" style="background: linear-gradient(135deg, #6366F1, #8B5CF6);">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.6"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                </div>
+                <div class="proto-name">产品研发组 <span class="badge-group">群</span></div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 右侧：名片区域 -->
+          <div class="proto-card-area" id="proto-card-area">
+            <div class="proto-empty">
+              <div style="font-size: 32px; opacity: 0.3; margin-bottom: var(--sp-3);">👆</div>
+              <div style="color: var(--text-tertiary);">点击左侧列表项查看名片</div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 名片模板（隐藏） -->
+        <template id="card-botfather">
+          <div class="proto-card">
+            <div class="card-close" onclick="hideCard()"><span>✕</span></div>
+            <div class="card-header">
+              <div style="width: 64px; height: 64px; border-radius: var(--r-lg); background: var(--brand-gradient); display: flex; align-items: center; justify-content: center;">
+                <svg viewBox="0 0 24 24" width="28" height="28" stroke="white" stroke-width="1.6" fill="none"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+              </div>
+              <div class="card-info">
+                <div class="card-name">BotFather <span class="badge-ai">AI</span></div>
+                <div class="card-sub">@botfather</div>
+              </div>
+            </div>
+            <div style="padding: var(--sp-3) var(--sp-5); border-top: 1px solid var(--border-subtle);">
+              <div style="font: var(--text-caption); color: var(--text-tertiary); margin-bottom: var(--sp-1);">简介</div>
+              <div style="font: var(--text-body); color: var(--text-secondary);">创建和管理你的 AI 机器人</div>
+            </div>
+            <div class="card-footer">
+              <button class="btn btn-primary" style="width: 100%;">发消息</button>
+            </div>
+          </div>
+        </template>
+        
+        <template id="card-abai">
+          <div class="proto-card">
+            <div class="card-close" onclick="hideCard()"><span>✕</span></div>
+            <div class="card-header">
+              <div class="avatar avatar-lg avatar-ai" style="background: linear-gradient(135deg, #7C5CFC, #5C9AFF);">阿
+                <span class="ai-mark"><svg viewBox="0 0 24 24" stroke-linecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></span>
+              </div>
+              <div class="card-info">
+                <div class="card-name">阿白 <span class="badge-ai">AI</span></div>
+                <div class="card-sub">@abai_bot</div>
+              </div>
+            </div>
+            <div style="padding: var(--sp-3) var(--sp-5); border-top: 1px solid var(--border-subtle);">
+              <div style="font: var(--text-caption); color: var(--text-tertiary); margin-bottom: var(--sp-1);">简介</div>
+              <div style="font: var(--text-body); color: var(--text-secondary);">智能助手，帮你处理日常工作</div>
+            </div>
+            <div style="padding: var(--sp-3) var(--sp-5);">
+              <div style="font: var(--text-caption); color: var(--text-tertiary); margin-bottom: var(--sp-1);">创建者</div>
+              <div style="font: var(--text-body); color: var(--text-secondary);">张三</div>
+            </div>
+            <div class="card-footer">
+              <button class="btn btn-primary" style="width: 100%;" onclick="showApplyForm()">添加好友</button>
+            </div>
+          </div>
+        </template>
+        
+        <!-- 申请表单 -->
+        <template id="card-apply-form">
+          <div class="proto-card" style="padding: var(--sp-5);">
+            <div style="font: var(--text-body-medium); margin-bottom: var(--sp-4);">申请加好友</div>
+            <div style="display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-3); background: var(--bg-elevated); border-radius: var(--r-md); margin-bottom: var(--sp-4);">
+              <div class="avatar avatar-sm avatar-ai" style="background: linear-gradient(135deg, #7C5CFC, #5C9AFF);">阿</div>
+              <div style="font: var(--text-body-medium);">阿白</div>
+            </div>
+            <div style="margin-bottom: var(--sp-4);">
+              <label style="display: block; font: var(--text-caption); color: var(--text-tertiary); margin-bottom: var(--sp-1);">申请原因 <span style="color: var(--text-tertiary);">（选填）</span></label>
+              <textarea id="apply-reason" style="width: 100%; padding: var(--sp-3); border: 1px solid var(--border-default); border-radius: var(--r-md); background: var(--bg-elevated); color: var(--text-primary); font: var(--text-body); min-height: 80px; resize: none;" placeholder="请输入申请原因..."></textarea>
+            </div>
+            <div style="display: flex; gap: var(--sp-2);">
+              <button class="btn btn-secondary" style="flex: 1;" onclick="showCard('abai')">取消</button>
+              <button class="btn btn-primary" style="flex: 1;" onclick="submitApply()">提交申请</button>
+            </div>
+          </div>
+        </template>
+        
+        <!-- 申请成功 -->
+        <template id="card-apply-success">
+          <div class="proto-card" style="padding: var(--sp-10) var(--sp-5); text-align: center;">
+            <div style="width: 64px; height: 64px; border-radius: 50%; background: var(--green-bg); display: flex; align-items: center; justify-content: center; margin: 0 auto var(--sp-4);">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div style="font: var(--text-body-medium); margin-bottom: var(--sp-2);">申请已提交</div>
+            <div style="font: var(--text-caption); color: var(--text-tertiary); margin-bottom: var(--sp-5);">等待 Owner 审批</div>
+            <button class="btn btn-primary" onclick="hideCard()">知道了</button>
+          </div>
+        </template>
+        
+        <template id="card-zhangsan">
+          <div class="proto-card">
+            <div class="card-close" onclick="hideCard()"><span>✕</span></div>
+            <div class="card-header">
+              <div class="avatar avatar-lg avatar-human" style="background: #0EA5E9;">张</div>
+              <div class="card-info">
+                <div class="card-name">张三</div>
+                <div class="card-sub">DMWork号：zhangsan</div>
+              </div>
+            </div>
+            <div class="card-menu">
+              <div class="card-menu-item">设置备注</div>
+              <div class="card-menu-item">解除好友关系</div>
+              <div class="card-menu-item">拉入黑名单</div>
+              <div class="card-menu-item">来源</div>
+            </div>
+            <div class="card-footer">
+              <button class="btn btn-primary" style="width: 100%;">发送消息</button>
+            </div>
+          </div>
+        </template>
+        
+        <template id="card-xiaomiao">
+          <div class="proto-card">
+            <div class="card-close" onclick="hideCard()"><span>✕</span></div>
+            <div class="card-header">
+              <div class="avatar avatar-lg avatar-ai" style="background: linear-gradient(135deg, #F59E0B, #EF4444);">小
+                <span class="ai-mark"><svg viewBox="0 0 24 24" stroke-linecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></span>
+              </div>
+              <div class="card-info">
+                <div class="card-name">小苗 <span class="badge-ai">AI</span></div>
+                <div class="card-sub">@xiaomiao_bot</div>
+              </div>
+            </div>
+            <div style="padding: var(--sp-3) var(--sp-5); border-top: 1px solid var(--border-subtle);">
+              <div style="font: var(--text-caption); color: var(--text-tertiary); margin-bottom: var(--sp-1);">简介</div>
+              <div style="font: var(--text-body); color: var(--text-secondary);">暂无简介</div>
+            </div>
+            <div style="padding: var(--sp-3) var(--sp-5);">
+              <div style="font: var(--text-caption); color: var(--text-tertiary); margin-bottom: var(--sp-1);">创建者</div>
+              <div style="font: var(--text-body); color: var(--text-secondary);">lejun</div>
+            </div>
+            <div class="card-footer">
+              <button class="btn btn-primary" style="width: 100%;">发消息</button>
+            </div>
+          </div>
+        </template>
+        
+        <template id="card-lisi">
+          <div class="proto-card">
+            <div class="card-close" onclick="hideCard()"><span>✕</span></div>
+            <div class="card-header">
+              <div class="avatar avatar-lg avatar-human" style="background: #EF4444;">李</div>
+              <div class="card-info">
+                <div class="card-name">李四</div>
+                <div class="card-sub">DMWork号：lisi</div>
+              </div>
+            </div>
+            <div class="card-menu">
+              <div class="card-menu-item">设置备注</div>
+              <div class="card-menu-item">解除好友关系</div>
+              <div class="card-menu-item">拉入黑名单</div>
+              <div class="card-menu-item">来源</div>
+            </div>
+            <div class="card-footer">
+              <button class="btn btn-primary" style="width: 100%;">发送消息</button>
+            </div>
+          </div>
+        </template>
+        
+        <template id="card-devgroup">
+          <div class="proto-card" style="text-align: center; padding: var(--sp-8);">
+            <div style="font-size: 32px; margin-bottom: var(--sp-3);">💬</div>
+            <div style="font: var(--text-body-medium); margin-bottom: var(--sp-2);">产品研发组</div>
+            <div style="font: var(--text-caption); color: var(--text-tertiary); margin-bottom: var(--sp-4);">点击群聊直接进入，不弹名片</div>
+            <button class="btn btn-primary">进入群聊</button>
+          </div>
+        </template>
       </section>
       
       <!-- Scope -->
@@ -605,6 +911,17 @@
           <li><strong>搜索框</strong>：按名称搜索</li>
           <li><strong>列表</strong>：人 + Bot + 群聊 混排，按拼音/字母排序</li>
         </ul>
+        
+        <h3>排序规则</h3>
+        <p>中英文混排时的排序逻辑：</p>
+        <ul>
+          <li>中文按<strong>拼音首字母</strong>排序</li>
+          <li>英文按<strong>字母</strong>排序</li>
+          <li>英文排在其对应字母位置（如 "JOJO" 排在 J 区，与「建国」「佳佳」一起）</li>
+          <li>同一字母下，英文和中文混排（不区分先后）</li>
+        </ul>
+        
+        <p><strong>示例</strong>：阿白 → JOJO → 建国 → 李四 → Thomas → 王五 → 小苗 → 张三</p>
         
         <h3>头像规则（形状即身份）</h3>
         <table>
@@ -857,6 +1174,33 @@
             <button class="btn btn-primary" style="width: 100%;">添加好友</button>
           </div>
         </div>
+        
+        <h3>线框图（审批中状态）</h3>
+        <div class="card">
+          <div class="card-close"><span>✕</span></div>
+          <div class="card-header">
+            <div class="avatar avatar-lg avatar-ai" style="background: linear-gradient(135deg, #7C5CFC, #5C9AFF);">T
+              <span class="ai-mark"><svg viewBox="0 0 24 24" stroke-linecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></span>
+            </div>
+            <div class="card-info">
+              <div class="card-name" style="display: flex; align-items: center; gap: var(--sp-2);">
+                托马斯.福 <span class="badge-ai">AI</span>
+              </div>
+              <div class="card-sub">@thomas_fu_bot</div>
+            </div>
+          </div>
+          <div style="padding: var(--sp-3) var(--sp-5); border-top: 1px solid var(--border-subtle);">
+            <div style="font: var(--text-caption); color: var(--text-tertiary); margin-bottom: var(--sp-1);">简介</div>
+            <div style="font: var(--text-body); color: var(--text-secondary);">暂无简介</div>
+          </div>
+          <div style="padding: var(--sp-3) var(--sp-5);">
+            <div style="font: var(--text-caption); color: var(--text-tertiary); margin-bottom: var(--sp-1);">创建者</div>
+            <div style="font: var(--text-body); color: var(--text-secondary);">邪恶小指头</div>
+          </div>
+          <div class="card-footer">
+            <button class="btn btn-secondary" style="width: 100%; opacity: 0.6; cursor: not-allowed;">申请审批中</button>
+          </div>
+        </div>
       </section>
       
       <!-- Apply Friend -->
@@ -890,6 +1234,13 @@
           <li>点击「知道了」关闭弹窗</li>
         </ul>
         
+        <h3>重复提交处理</h3>
+        <p>已提交申请且正在等待审批时：</p>
+        <ul>
+          <li>按钮直接显示 <strong>「申请审批中」</strong>（灰色，不可点击）</li>
+          <li>申请被拒绝后，按钮恢复为「添加好友」，可重新申请</li>
+        </ul>
+        
         <h3>线框图（申请表单）</h3>
         <div class="card" style="padding: var(--sp-5);">
           <div style="font: var(--text-body-medium); margin-bottom: var(--sp-4);">申请加好友</div>
@@ -918,7 +1269,7 @@
       <!-- Notification -->
       <section id="notification" class="section">
         <h1>审批通知</h1>
-        <p>Owner 收到加好友申请时，系统小助手发送消息卡片。</p>
+        <p>Owner 收到加好友申请时，<strong>BotFather</strong> 发送消息卡片（BotFather 是管理 Bot 的角色，统一由它发送审批通知）。</p>
         
         <h3>卡片内容</h3>
         <ul>
@@ -945,7 +1296,7 @@
           <div class="approval-title">📩 好友申请</div>
           <div class="approval-row"><span>申请人</span><span>李四</span></div>
           <div class="approval-row"><span>申请 Bot</span><span>小苗</span></div>
-          <div class="approval-row"><span>申请原因</span><span style="color: var(--text-tertiary);">-</span></div>
+          <div class="approval-reason" style="color: var(--text-tertiary);">-</div>
           <div class="approval-actions">
             <button class="btn btn-primary">通过</button>
             <button class="btn btn-secondary">拒绝</button>
@@ -981,7 +1332,7 @@
     </div>
     
     <div style="text-align: center; padding: var(--sp-5); color: var(--text-tertiary); font: var(--text-caption);">
-      MVP | 2026-03-18 | Octo v4 Design System
+      MVP | 2026-03-18 v2 | Octo v4 Design System
     </div>
   </main>
   
@@ -1012,6 +1363,80 @@
         fab.textContent = '🌞';
       }
     }
+    
+    // Interactive Prototype
+    function showCard(id) {
+      const template = document.getElementById('card-' + id);
+      const area = document.getElementById('proto-card-area');
+      if (template && area) {
+        area.innerHTML = template.innerHTML;
+        // Highlight active item
+        document.querySelectorAll('.proto-item').forEach(i => i.classList.remove('active'));
+        const item = document.querySelector('.proto-item[data-id="' + id + '"]');
+        if (item) item.classList.add('active');
+      }
+    }
+    
+    function hideCard() {
+      const area = document.getElementById('proto-card-area');
+      if (area) {
+        area.innerHTML = '<div class="proto-empty"><div style="font-size: 32px; opacity: 0.3; margin-bottom: var(--sp-3);">👆</div><div style="color: var(--text-tertiary);">点击左侧列表项查看名片</div></div>';
+        document.querySelectorAll('.proto-item').forEach(i => i.classList.remove('active'));
+      }
+    }
+    
+    function filterList() {
+      const filter = document.getElementById('proto-filter').value;
+      const search = document.getElementById('proto-search').value.toLowerCase();
+      const items = document.querySelectorAll('.proto-item');
+      
+      items.forEach(item => {
+        const type = item.dataset.type;
+        const name = item.querySelector('.proto-name').textContent.toLowerCase();
+        
+        // Filter logic
+        let showByFilter = false;
+        if (filter === 'all') showByFilter = true;
+        else if (filter === 'my-bot' && type === 'bot') showByFilter = true;
+        else if (filter === 'all-bot' && type === 'bot') showByFilter = true;
+        else if (filter === 'people' && type === 'people') showByFilter = true;
+        else if (filter === 'group' && type === 'group') showByFilter = true;
+        
+        // Search logic
+        const showBySearch = !search || name.includes(search);
+        
+        // Apply
+        if (showByFilter && showBySearch) {
+          item.classList.remove('hidden');
+        } else {
+          item.classList.add('hidden');
+        }
+      });
+    }
+    
+    // 申请流程
+    let applyReason = '';
+    
+    function showApplyForm() {
+      const template = document.getElementById('card-apply-form');
+      const area = document.getElementById('proto-card-area');
+      if (template && area) {
+        area.innerHTML = template.innerHTML;
+      }
+    }
+    
+    function submitApply() {
+      const reasonInput = document.getElementById('apply-reason');
+      applyReason = reasonInput ? reasonInput.value : '';
+      
+      const template = document.getElementById('card-apply-success');
+      const area = document.getElementById('proto-card-area');
+      if (template && area) {
+        area.innerHTML = template.innerHTML;
+      }
+    }
+    
+    
   </script>
 </body>
 </html>
