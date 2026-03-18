@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PRD: 通讯录与 Bot 整合 (MVP)</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+    
+    /* ============================================================
+       Design Tokens (from Octo v4 Design System)
+       ============================================================ */
+    :root {
+      /* Brand */
+      --brand-from: #7C5CFC;
+      --brand-to: #00D4AA;
+      --brand-gradient: linear-gradient(135deg, var(--brand-from), var(--brand-to));
+      --brand-gradient-subtle: linear-gradient(135deg, rgba(124,92,252,0.12), rgba(0,212,170,0.08));
+      --brand-primary: #7C5CFC;
+      
+      /* Typography */
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+      --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
+      
+      --text-h1: 700 28px/1.25 var(--font-sans);
+      --text-h2: 700 22px/1.3 var(--font-sans);
+      --text-h3: 600 16px/1.35 var(--font-sans);
+      --text-h4: 600 14px/1.4 var(--font-sans);
+      --text-body: 400 14px/1.5 var(--font-sans);
+      --text-body-medium: 500 14px/1.5 var(--font-sans);
+      --text-caption: 400 12px/1.5 var(--font-sans);
+      --text-tiny: 500 10px/1.4 var(--font-sans);
+      --text-mono-sm: 400 11px/1.4 var(--font-mono);
+      
+      /* Spacing (4px grid) */
+      --sp-1: 4px;
+      --sp-2: 8px;
+      --sp-3: 12px;
+      --sp-4: 16px;
+      --sp-5: 20px;
+      --sp-6: 24px;
+      --sp-8: 32px;
+      --sp-10: 40px;
+      --sp-12: 48px;
+      
+      /* Radius */
+      --r-xs: 4px;
+      --r-sm: 6px;
+      --r-md: 10px;
+      --r-lg: 14px;
+      --r-xl: 20px;
+      --r-full: 9999px;
+      
+      /* Transitions */
+      --ease: cubic-bezier(0.16, 1, 0.3, 1);
+      --dur: 200ms;
+    }
+    
+    /* Dark Theme */
+    [data-theme="dark"] {
+      --bg-deep: #111318;
+      --bg-base: #171921;
+      --bg-surface: #1E212B;
+      --bg-elevated: #262A36;
+      --bg-hover: #2E3240;
+      --bg-active: #363B4A;
+      
+      --text-primary: #E4E6ED;
+      --text-secondary: #9CA1B3;
+      --text-tertiary: #7A7F96;
+      --text-accent: #B0A4FF;
+      
+      --border-subtle: rgba(255,255,255,0.04);
+      --border-default: rgba(255,255,255,0.07);
+      --border-strong: rgba(255,255,255,0.12);
+      --border-glow: rgba(124,92,252,0.2);
+      
+      --green: #00D4AA;
+      --green-bg: rgba(0,212,170,0.1);
+      --red: #FF5C72;
+      --red-bg: rgba(255,92,114,0.1);
+      
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+      --shadow-lg: 0 8px 24px rgba(0,0,0,0.5);
+      
+      color-scheme: dark;
+    }
+    
+    /* Light Theme */
+    [data-theme="light"] {
+      --bg-deep: #F0F1F5;
+      --bg-base: #F7F8FA;
+      --bg-surface: #FFFFFF;
+      --bg-elevated: #F0F1F5;
+      --bg-hover: #EAEBF0;
+      --bg-active: #E2E3EA;
+      
+      --text-primary: #1A1C24;
+      --text-secondary: #5C6070;
+      --text-tertiary: #9498A8;
+      --text-accent: #6B4FD8;
+      
+      --border-subtle: rgba(0,0,0,0.05);
+      --border-default: rgba(0,0,0,0.08);
+      --border-strong: rgba(0,0,0,0.14);
+      --border-glow: rgba(124,92,252,0.25);
+      
+      --green: #00B894;
+      --green-bg: rgba(0,184,148,0.08);
+      --red: #E5405E;
+      --red-bg: rgba(229,64,94,0.08);
+      
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.06);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+      --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+      
+      color-scheme: light;
+    }
+    
+    /* ============================================================
+       Base Styles
+       ============================================================ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font: var(--text-body);
+      background: var(--bg-deep);
+      color: var(--text-primary);
+      -webkit-font-smoothing: antialiased;
+    }
+    
+    ::selection {
+      background: rgba(124,92,252,0.3);
+      color: var(--text-primary);
+    }
+    
+    /* ============================================================
+       Layout
+       ============================================================ */
+    .nav {
+      position: fixed; top: 0; left: 0; width: 220px; height: 100vh;
+      background: var(--bg-base); border-right: 1px solid var(--border-subtle);
+      padding: var(--sp-5); overflow-y: auto; z-index: 100;
+    }
+    .nav-title {
+      font: var(--text-h4);
+      background: var(--brand-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: var(--sp-4);
+    }
+    .nav-section {
+      font: var(--text-tiny);
+      color: var(--text-tertiary);
+      margin-top: var(--sp-4);
+      margin-bottom: var(--sp-2);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .nav-item {
+      display: block;
+      padding: var(--sp-2) var(--sp-3);
+      margin: var(--sp-1) 0;
+      border-radius: var(--r-sm);
+      font: var(--text-caption);
+      color: var(--text-secondary);
+      text-decoration: none;
+      cursor: pointer;
+      transition: all var(--dur);
+    }
+    .nav-item:hover { background: var(--bg-hover); color: var(--text-primary); }
+    .nav-item.active {
+      background: rgba(124,92,252,0.1);
+      color: var(--text-accent);
+      position: relative;
+    }
+    .nav-item.active::before {
+      content: '';
+      position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+      width: 3px; height: 60%;
+      border-radius: 0 2px 2px 0;
+      background: var(--brand-gradient);
+    }
+    
+    .main { margin-left: 220px; padding: var(--sp-10) var(--sp-8); }
+    .container {
+      max-width: 900px; margin: 0 auto;
+      background: var(--bg-surface);
+      padding: var(--sp-10);
+      border-radius: var(--r-lg);
+      border: 1px solid var(--border-subtle);
+    }
+    
+    .section { display: none; }
+    .section.active { display: block; }
+    
+    h1 {
+      font: var(--text-h1);
+      background: var(--brand-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: var(--sp-2);
+    }
+    h2 {
+      font: var(--text-h2);
+      color: var(--text-primary);
+      margin-top: var(--sp-8);
+      margin-bottom: var(--sp-4);
+      padding-bottom: var(--sp-2);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    h3 {
+      font: var(--text-h3);
+      color: var(--text-secondary);
+      margin-top: var(--sp-6);
+      margin-bottom: var(--sp-3);
+    }
+    p { margin-bottom: var(--sp-3); color: var(--text-secondary); }
+    
+    .subtitle { color: var(--text-tertiary); margin-bottom: var(--sp-6); }
+    .meta {
+      display: inline-block;
+      font: var(--text-tiny);
+      padding: 2px var(--sp-2);
+      border-radius: var(--r-xs);
+      background: var(--bg-elevated);
+      color: var(--text-tertiary);
+      margin-right: var(--sp-2);
+    }
+    
+    ul { margin-left: var(--sp-5); margin-bottom: var(--sp-4); }
+    li { margin-bottom: var(--sp-2); color: var(--text-secondary); }
+    
+    table { width: 100%; border-collapse: collapse; margin: var(--sp-4) 0; }
+    th, td {
+      padding: var(--sp-2) var(--sp-3);
+      text-align: left;
+      border: 1px solid var(--border-default);
+      font: var(--text-caption);
+    }
+    th { background: var(--bg-elevated); font-weight: 600; color: var(--text-secondary); }
+    td { color: var(--text-secondary); }
+    
+    /* ============================================================
+       Components
+       ============================================================ */
+    
+    /* Buttons */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2);
+      font: var(--text-body-medium);
+      padding: var(--sp-2) var(--sp-4);
+      border-radius: var(--r-md);
+      border: none;
+      cursor: pointer;
+      transition: all var(--dur) var(--ease);
+    }
+    .btn-primary {
+      background: #008F76;
+      color: white;
+      box-shadow: 0 2px 8px rgba(0,143,118,0.25);
+    }
+    .btn-primary:hover { background: #007A66; transform: translateY(-1px); }
+    
+    .btn-secondary {
+      background: var(--bg-elevated);
+      color: var(--text-primary);
+      border: 1px solid var(--border-default);
+    }
+    .btn-secondary:hover { background: var(--bg-hover); }
+    
+    /* Tags */
+    .tag { display: inline-block; padding: 2px var(--sp-2); border-radius: var(--r-xs); font: var(--text-tiny); }
+    .tag-mvp { background: var(--brand-gradient-subtle); color: var(--text-accent); }
+    
+    /* Badge */
+    .badge-ai {
+      display: inline-flex; align-items: center;
+      font: var(--text-tiny);
+      padding: 1px 6px;
+      border-radius: var(--r-xs);
+      background: var(--brand-gradient);
+      color: white;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .badge-group {
+      display: inline-flex; align-items: center;
+      font: var(--text-tiny);
+      padding: 1px 6px;
+      border-radius: var(--r-xs);
+      background: var(--green-bg);
+      color: var(--green);
+      font-weight: 600;
+    }
+    
+    /* Avatar */
+    .avatar {
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 600; color: white;
+      flex-shrink: 0;
+      position: relative;
+    }
+    .avatar-sm { width: 28px; height: 28px; font-size: 11px; }
+    .avatar-md { width: 36px; height: 36px; font-size: 14px; }
+    .avatar-lg { width: 48px; height: 48px; font-size: 18px; }
+    
+    /* 人类 = 圆形 */
+    .avatar-human { border-radius: 50%; }
+    /* AI = 圆角方形 */
+    .avatar-ai { border-radius: var(--r-sm); }
+    /* 群组 = 大圆角方形 */
+    .avatar-group { border-radius: var(--r-md); }
+    
+    /* AI 角标 */
+    .avatar .ai-mark {
+      position: absolute; bottom: -2px; right: -2px;
+      width: 14px; height: 14px; border-radius: 4px;
+      background: var(--brand-gradient);
+      border: 2px solid var(--bg-base);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .avatar .ai-mark svg { width: 7px; height: 7px; stroke: white; stroke-width: 2.5; fill: none; }
+    
+    /* Flow */
+    .flow {
+      display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap;
+      margin: var(--sp-4) 0;
+      padding: var(--sp-4);
+      background: var(--bg-elevated);
+      border-radius: var(--r-md);
+    }
+    .flow-box {
+      padding: var(--sp-2) var(--sp-4);
+      border-radius: var(--r-sm);
+      font: var(--text-caption);
+      font-weight: 500;
+    }
+    .flow-start { background: var(--green-bg); color: var(--green); }
+    .flow-action { background: rgba(124,92,252,0.1); color: var(--text-accent); }
+    .flow-end { background: var(--red-bg); color: var(--red); }
+    .flow-arrow { color: var(--text-tertiary); }
+    
+    /* Wireframe containers */
+    .wireframe {
+      background: var(--bg-base);
+      border: 1px solid var(--border-default);
+      border-radius: var(--r-lg);
+      overflow: hidden;
+      max-width: 360px;
+      margin: var(--sp-4) 0;
+    }
+    .wireframe-header {
+      padding: var(--sp-3) var(--sp-4);
+      border-bottom: 1px solid var(--border-subtle);
+      font: var(--text-body-medium);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .wireframe-item {
+      display: flex; align-items: center;
+      padding: var(--sp-2) var(--sp-4);
+      gap: var(--sp-3);
+      border-bottom: 1px solid var(--border-subtle);
+      cursor: pointer;
+      transition: background var(--dur);
+    }
+    .wireframe-item:hover { background: var(--bg-hover); }
+    .wireframe-item:last-child { border-bottom: none; }
+    .wireframe-name { font: var(--text-body-medium); display: flex; align-items: center; gap: var(--sp-2); }
+    
+    /* Card */
+    .card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-default);
+      border-radius: var(--r-lg);
+      max-width: 300px;
+      margin: var(--sp-4) 0;
+      overflow: hidden;
+    }
+    .card-close {
+      display: flex; justify-content: flex-start;
+      padding: var(--sp-4);
+    }
+    .card-close span {
+      color: var(--text-tertiary);
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .card-close span:hover { color: var(--text-secondary); }
+    .card-header {
+      display: flex; align-items: center; gap: var(--sp-3);
+      padding: 0 var(--sp-5) var(--sp-4);
+    }
+    .card-info { flex: 1; }
+    .card-name { font: var(--text-body-medium); }
+    .card-sub { font: var(--text-caption); color: var(--text-tertiary); margin-top: 2px; }
+    .card-menu { border-top: 1px solid var(--border-subtle); }
+    .card-menu-item {
+      padding: var(--sp-3) var(--sp-5);
+      border-bottom: 1px solid var(--border-subtle);
+      font: var(--text-body);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: background var(--dur);
+    }
+    .card-menu-item:hover { background: var(--bg-hover); }
+    .card-menu-item:last-child { border-bottom: none; }
+    .card-footer { padding: var(--sp-4) var(--sp-5); }
+    
+    /* BotFather banner */
+    .botfather-banner {
+      display: flex; align-items: center; gap: var(--sp-3);
+      padding: var(--sp-3) var(--sp-4);
+      background: var(--brand-gradient);
+      color: white;
+      cursor: pointer;
+    }
+    .botfather-icon {
+      width: 40px; height: 40px;
+      background: rgba(255,255,255,0.2);
+      border-radius: var(--r-md);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .botfather-icon svg {
+      width: 20px; height: 20px;
+      stroke: white; stroke-width: 1.6; fill: none;
+    }
+    .botfather-info { flex: 1; }
+    .botfather-name { font: var(--text-body-medium); }
+    .botfather-desc { font: var(--text-caption); opacity: 0.9; }
+    
+    /* Filter select */
+    .filter-select {
+      padding: var(--sp-1) var(--sp-2);
+      border: 1px solid var(--border-default);
+      border-radius: var(--r-sm);
+      background: var(--bg-elevated);
+      color: var(--text-secondary);
+      font: var(--text-caption);
+      cursor: pointer;
+    }
+    
+    /* Search input */
+    .search-input {
+      width: 100%;
+      padding: var(--sp-2) var(--sp-3);
+      border: 1px solid var(--border-default);
+      border-radius: var(--r-md);
+      background: var(--bg-elevated);
+      color: var(--text-primary);
+      font: var(--text-body);
+    }
+    .search-input::placeholder { color: var(--text-tertiary); }
+    .search-input:focus {
+      outline: none;
+      border-color: var(--border-glow);
+      box-shadow: 0 0 0 3px rgba(124,92,252,0.06);
+    }
+    
+    /* Theme toggle */
+    .theme-fab {
+      position: fixed; bottom: 20px; right: 20px;
+      width: 40px; height: 40px; border-radius: 50%;
+      background: var(--bg-elevated); border: 1px solid var(--border-default);
+      color: var(--text-secondary); font-size: 18px;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      box-shadow: var(--shadow-md); z-index: 1000;
+      transition: transform 0.2s;
+    }
+    .theme-fab:hover { transform: scale(1.1); }
+    
+    /* Demo note */
+    .demo-note {
+      font: var(--text-caption);
+      color: var(--text-tertiary);
+      margin-top: var(--sp-2);
+      font-style: italic;
+    }
+    
+    /* Approval card */
+    .approval-card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-default);
+      border-radius: var(--r-lg);
+      padding: var(--sp-4);
+      max-width: 300px;
+      margin: var(--sp-4) 0;
+    }
+    .approval-title {
+      font: var(--text-body-medium);
+      margin-bottom: var(--sp-3);
+    }
+    .approval-row {
+      display: flex; justify-content: space-between;
+      padding: var(--sp-1) 0;
+      font: var(--text-caption);
+      color: var(--text-secondary);
+    }
+    .approval-row span:last-child { font-weight: 500; color: var(--text-primary); }
+    .approval-reason {
+      font: var(--text-caption);
+      color: var(--text-secondary);
+      padding: var(--sp-2) var(--sp-3);
+      background: var(--bg-surface);
+      border-radius: var(--r-sm);
+      margin: var(--sp-3) 0;
+      border-left: 3px solid var(--brand-primary);
+    }
+    .approval-actions {
+      display: flex; gap: var(--sp-2);
+      margin-top: var(--sp-3);
+    }
+    .approval-actions .btn { flex: 1; }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-title">PRD: 通讯录整合</div>
+    
+    <div class="nav-section">概述</div>
+    <a class="nav-item active" data-section="overview">背景与目标</a>
+    <a class="nav-item" data-section="scope">功能范围</a>
+    
+    <div class="nav-section">通讯录</div>
+    <a class="nav-item" data-section="contact-list">列表结构</a>
+    <a class="nav-item" data-section="top-entry">顶部入口 + 筛选</a>
+    <a class="nav-item" data-section="search">搜索功能</a>
+    
+    <div class="nav-section">名片</div>
+    <a class="nav-item" data-section="person-card">人的名片</a>
+    <a class="nav-item" data-section="bot-card">Bot 名片</a>
+    
+    <div class="nav-section">添加好友</div>
+    <a class="nav-item" data-section="apply-friend">申请流程</a>
+    <a class="nav-item" data-section="notification">审批通知</a>
+    
+    <div class="nav-section">附录</div>
+    <a class="nav-item" data-section="edge-cases">边界条件</a>
+    <a class="nav-item" data-section="terms">术语定义</a>
+  </nav>
+  
+  <main class="main">
+    <div class="container">
+    
+      <!-- Overview -->
+      <section id="overview" class="section active">
+        <h1>通讯录与 Bot 整合</h1>
+        <p class="subtitle">
+          <span class="meta">P0</span>
+          <span class="meta">MVP</span>
+          <span class="meta">2026-03-18</span>
+        </p>
+        
+        <h2>背景</h2>
+        <p>Octo 的核心理念是「AI 归个人，协作无边界」—— 人和 AI 是平等的一等公民，应该在同一个列表里展示。</p>
+        
+        <h3>核心原则</h3>
+        <ul>
+          <li><strong>人 + AI + 群聊 混排</strong> — 不分开显示，体现平等</li>
+          <li><strong>形状即身份</strong> — 人=圆形，Bot=方形+渐变角标，群=大圆角方形</li>
+          <li><strong>统一名片体验</strong> — 点击人/Bot 都弹出名片</li>
+        </ul>
+        
+        <h2>用户故事</h2>
+        <ul>
+          <li>作为用户，我希望在一个列表里看到所有通讯录（人 + Bot + 群聊）</li>
+          <li>作为用户，我希望点击任何通讯录都能看到名片</li>
+          <li>作为用户，我希望快速找到 BotFather</li>
+          <li>作为 Owner，我希望收到并审批加好友申请</li>
+        </ul>
+      </section>
+      
+      <!-- Scope -->
+      <section id="scope" class="section">
+        <h1>功能范围 (MVP)</h1>
+        
+        <table>
+          <thead>
+            <tr><th>模块</th><th>功能</th><th>优先级</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>通讯录列表</td><td>人 + Bot + 群聊混排、搜索、筛选</td><td><span class="tag tag-mvp">MVP</span></td></tr>
+            <tr><td>顶部入口</td><td>BotFather 横幅 + 筛选项</td><td><span class="tag tag-mvp">MVP</span></td></tr>
+            <tr><td>人的名片</td><td>设置备注、解除好友、拉黑、来源、发消息</td><td><span class="tag tag-mvp">MVP</span></td></tr>
+            <tr><td>Bot 名片</td><td>头像、名字、简介、创建者、按钮</td><td><span class="tag tag-mvp">MVP</span></td></tr>
+            <tr><td>申请加好友</td><td>填写申请原因（选填）、提交申请</td><td><span class="tag tag-mvp">MVP</span></td></tr>
+            <tr><td>审批通知</td><td>卡片形式展示申请、通过/拒绝</td><td><span class="tag tag-mvp">MVP</span></td></tr>
+          </tbody>
+        </table>
+      </section>
+      
+      <!-- Contact List -->
+      <section id="contact-list" class="section">
+        <h1>通讯录列表</h1>
+        <p>人、Bot、群聊在同一个列表里，平铺展示。</p>
+        
+        <h3>结构</h3>
+        <ul>
+          <li><strong>顶部入口</strong>：BotFather（横幅样式，占满宽度）</li>
+          <li><strong>筛选项</strong>：在「通讯录」右侧，可筛选「全部」「我的 Bot」「所有 Bot」「所有员工」「群聊」</li>
+          <li><strong>搜索框</strong>：按名称搜索</li>
+          <li><strong>列表</strong>：人 + Bot + 群聊 混排，按拼音/字母排序</li>
+        </ul>
+        
+        <h3>头像规则（形状即身份）</h3>
+        <table>
+          <thead>
+            <tr><th>类型</th><th>头像形状</th><th>角标</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>人</td>
+              <td>圆形</td>
+              <td>无</td>
+            </tr>
+            <tr>
+              <td>Bot</td>
+              <td>圆角方形 (r-sm: 6px)</td>
+              <td>渐变小方块 <span class="badge-ai">AI</span></td>
+            </tr>
+            <tr>
+              <td>群聊</td>
+              <td>大圆角方形 (r-md: 10px)</td>
+              <td><span class="badge-group">群</span></td>
+            </tr>
+          </tbody>
+        </table>
+        
+        <h3>交互</h3>
+        <ul>
+          <li>点击人/Bot → 弹出名片</li>
+          <li>点击群聊 → 进入群聊</li>
+        </ul>
+        
+        <h3>线框图</h3>
+        <div style="display: flex; gap: 0; max-width: 400px;">
+          <!-- Nav Rail -->
+          <div style="width: 52px; background: var(--bg-deep); border-radius: var(--r-lg) 0 0 var(--r-lg); padding: var(--sp-3) 0; display: flex; flex-direction: column; align-items: center; gap: var(--sp-1);">
+            <div style="width: 32px; height: 32px; border-radius: var(--r-sm); background: var(--bg-elevated); display: flex; align-items: center; justify-content: center;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="1.6"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            </div>
+            <div style="width: 32px; height: 32px; border-radius: var(--r-sm); background: var(--bg-elevated); display: flex; align-items: center; justify-content: center; position: relative;">
+              <div style="position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 3px; height: 18px; border-radius: 0 3px 3px 0; background: var(--brand-gradient);"></div>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-primary)" stroke-width="1.6"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+            </div>
+          </div>
+          <!-- Main List -->
+          <div class="wireframe" style="border-radius: 0 var(--r-lg) var(--r-lg) 0; margin: 0; flex: 1;">
+            <div class="wireframe-header">
+              <span style="display: flex; align-items: center; gap: var(--sp-2);">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                通讯录
+              </span>
+              <select class="filter-select">
+                <option>全部</option>
+                <option>我的 Bot</option>
+                <option>所有 Bot</option>
+                <option>所有员工</option>
+                <option>群聊</option>
+              </select>
+            </div>
+            <div class="botfather-banner">
+              <div class="botfather-icon">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+              </div>
+              <div class="botfather-info">
+                <div class="botfather-name">BotFather</div>
+                <div class="botfather-desc">创建和管理你的 AI 机器人</div>
+              </div>
+            </div>
+            <div style="padding: var(--sp-3) var(--sp-4); border-bottom: 1px solid var(--border-subtle);">
+              <input type="text" class="search-input" placeholder="🔍 搜索通讯录">
+            </div>
+            <!-- List items -->
+            <div class="wireframe-item">
+              <div class="avatar avatar-md avatar-ai" style="background: linear-gradient(135deg, #7C5CFC, #5C9AFF);">阿
+                <span class="ai-mark"><svg viewBox="0 0 24 24" stroke-linecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></span>
+              </div>
+              <div class="wireframe-name">阿白 <span class="badge-ai">AI</span></div>
+            </div>
+            <div class="wireframe-item">
+              <div class="avatar avatar-md avatar-human" style="background: #0EA5E9;">张</div>
+              <div class="wireframe-name">张三</div>
+            </div>
+            <div class="wireframe-item">
+              <div class="avatar avatar-md avatar-ai" style="background: linear-gradient(135deg, #F59E0B, #EF4444);">小
+                <span class="ai-mark"><svg viewBox="0 0 24 24" stroke-linecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></span>
+              </div>
+              <div class="wireframe-name">小苗 <span class="badge-ai">AI</span></div>
+            </div>
+            <div class="wireframe-item">
+              <div class="avatar avatar-md avatar-human" style="background: #EF4444;">李</div>
+              <div class="wireframe-name">李四</div>
+            </div>
+            <div class="wireframe-item">
+              <div class="avatar avatar-md avatar-group" style="background: linear-gradient(135deg, #6366F1, #8B5CF6);">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.6"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              </div>
+              <div class="wireframe-name">产品研发组 <span class="badge-group">群</span></div>
+            </div>
+          </div>
+        </div>
+        <p class="demo-note">头像形状区分身份：人=圆形，Bot=方形+渐变角标，群=大圆角方形。</p>
+      </section>
+      
+      <!-- Top Entry -->
+      <section id="top-entry" class="section">
+        <h1>顶部入口 + 筛选</h1>
+        
+        <h3>BotFather 横幅</h3>
+        <ul>
+          <li>横幅样式，占满宽度</li>
+          <li>品牌渐变背景 (#7C5CFC → #00D4AA)</li>
+          <li>点击 → 跳转到 BotFather 聊天页面</li>
+        </ul>
+        
+        <h3>筛选项</h3>
+        <p>位于「通讯录」标题右侧，下拉选择。筛选后直接更新当前列表，不跳转新页面。</p>
+        <table>
+          <thead>
+            <tr><th>筛选项</th><th>列表显示内容</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>全部</strong>（默认）</td><td>所有人 + 所有 Bot + 群聊</td></tr>
+            <tr><td><strong>我的 Bot</strong></td><td>我加好友的 Bot</td></tr>
+            <tr><td><strong>所有 Bot</strong></td><td>组织内所有可见的 Bot</td></tr>
+            <tr><td><strong>所有员工</strong></td><td>只显示人</td></tr>
+            <tr><td><strong>群聊</strong></td><td>只显示群聊</td></tr>
+          </tbody>
+        </table>
+        
+        <h3>交互</h3>
+        <ul>
+          <li>切换筛选 → 列表原地刷新</li>
+          <li>不跳转新页面</li>
+          <li>搜索范围跟着筛选走</li>
+        </ul>
+      </section>
+      
+      <!-- Search -->
+      <section id="search" class="section">
+        <h1>搜索功能</h1>
+        
+        <h3>搜索范围</h3>
+        <p>搜索范围跟着筛选走，只搜索当前筛选结果。</p>
+        <table>
+          <thead>
+            <tr><th>当前筛选</th><th>搜索范围</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>全部</td><td>所有人 + 所有 Bot + 群聊</td></tr>
+            <tr><td>我的 Bot</td><td>只搜我加好友的 Bot</td></tr>
+            <tr><td>所有 Bot</td><td>只搜组织内所有 Bot</td></tr>
+            <tr><td>所有员工</td><td>只搜人</td></tr>
+            <tr><td>群聊</td><td>只搜群聊</td></tr>
+          </tbody>
+        </table>
+        
+        <h3>搜索方式</h3>
+        <ul>
+          <li>按名称搜索</li>
+          <li>实时过滤，输入即搜</li>
+        </ul>
+      </section>
+      
+      <!-- Person Card -->
+      <section id="person-card" class="section">
+        <h1>人的名片</h1>
+        <p>点击人 → 弹出名片。</p>
+        
+        <h3>名片内容</h3>
+        <ul>
+          <li>头像 + 名字（圆形头像）</li>
+          <li>DMWork 号</li>
+          <li>设置备注</li>
+          <li>解除好友关系</li>
+          <li>拉入黑名单</li>
+          <li>来源</li>
+          <li>发送消息（按钮）</li>
+        </ul>
+        
+        <h3>线框图</h3>
+        <div class="card">
+          <div class="card-close"><span>✕</span></div>
+          <div class="card-header">
+            <div class="avatar avatar-lg avatar-human" style="background: #F59E0B;">乐</div>
+            <div class="card-info">
+              <div class="card-name">lejun</div>
+              <div class="card-sub">DMWork号：lejun1liu</div>
+            </div>
+          </div>
+          <div class="card-menu">
+            <div class="card-menu-item">设置备注</div>
+            <div class="card-menu-item">解除好友关系</div>
+            <div class="card-menu-item">拉入黑名单</div>
+            <div class="card-menu-item">来源</div>
+          </div>
+          <div class="card-footer">
+            <button class="btn btn-primary" style="width: 100%;">发送消息</button>
+          </div>
+        </div>
+      </section>
+      
+      <!-- Bot Card -->
+      <section id="bot-card" class="section">
+        <h1>Bot 名片</h1>
+        <p>点击 Bot → 弹出 Bot 名片。</p>
+        
+        <h3>名片内容</h3>
+        <ul>
+          <li>头像（方形 + 渐变角标）</li>
+          <li>名字 + [AI] 标识</li>
+          <li>@用户名</li>
+          <li>简介</li>
+          <li>创建者</li>
+        </ul>
+        
+        <h3>按钮逻辑</h3>
+        <table>
+          <thead>
+            <tr><th>用户身份</th><th>按钮</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>无好友关系</td><td><button class="btn btn-primary" style="padding: var(--sp-1) var(--sp-3);">添加好友</button></td></tr>
+            <tr><td>已是好友</td><td><button class="btn btn-primary" style="padding: var(--sp-1) var(--sp-3);">发消息</button></td></tr>
+            <tr><td>Owner</td><td><button class="btn btn-primary" style="padding: var(--sp-1) var(--sp-3);">发消息</button></td></tr>
+          </tbody>
+        </table>
+        
+        <h3>线框图（无好友关系）</h3>
+        <div class="card">
+          <div class="card-close"><span>✕</span></div>
+          <div class="card-header">
+            <div class="avatar avatar-lg avatar-ai" style="background: linear-gradient(135deg, #7C5CFC, #5C9AFF);">T
+              <span class="ai-mark"><svg viewBox="0 0 24 24" stroke-linecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></span>
+            </div>
+            <div class="card-info">
+              <div class="card-name" style="display: flex; align-items: center; gap: var(--sp-2);">
+                托马斯.福 <span class="badge-ai">AI</span>
+              </div>
+              <div class="card-sub">@thomas_fu_bot</div>
+            </div>
+          </div>
+          <div style="padding: var(--sp-3) var(--sp-5); border-top: 1px solid var(--border-subtle);">
+            <div style="font: var(--text-caption); color: var(--text-tertiary); margin-bottom: var(--sp-1);">简介</div>
+            <div style="font: var(--text-body); color: var(--text-secondary);">暂无简介</div>
+          </div>
+          <div style="padding: var(--sp-3) var(--sp-5);">
+            <div style="font: var(--text-caption); color: var(--text-tertiary); margin-bottom: var(--sp-1);">创建者</div>
+            <div style="font: var(--text-body); color: var(--text-secondary);">邪恶小指头</div>
+          </div>
+          <div class="card-footer">
+            <button class="btn btn-primary" style="width: 100%;">添加好友</button>
+          </div>
+        </div>
+      </section>
+      
+      <!-- Apply Friend -->
+      <section id="apply-friend" class="section">
+        <h1>申请加好友</h1>
+        <p>点击「添加好友」后，填写申请原因。</p>
+        
+        <h3>流程</h3>
+        <div class="flow">
+          <div class="flow-box flow-start">点击「添加好友」</div>
+          <span class="flow-arrow">→</span>
+          <div class="flow-box flow-action">填写申请原因</div>
+          <span class="flow-arrow">→</span>
+          <div class="flow-box flow-action">提交申请</div>
+          <span class="flow-arrow">→</span>
+          <div class="flow-box flow-action">显示成功回显</div>
+          <span class="flow-arrow">→</span>
+          <div class="flow-box flow-end">等待 Owner 审批</div>
+        </div>
+        
+        <h3>申请原因</h3>
+        <ul>
+          <li><strong>非必填</strong>，可以为空</li>
+          <li>为空时直接提交</li>
+        </ul>
+        
+        <h3>成功回显</h3>
+        <ul>
+          <li>提交后显示「申请已提交」</li>
+          <li>提示「等待 Owner 审批」</li>
+          <li>点击「知道了」关闭弹窗</li>
+        </ul>
+        
+        <h3>线框图（申请表单）</h3>
+        <div class="card" style="padding: var(--sp-5);">
+          <div style="font: var(--text-body-medium); margin-bottom: var(--sp-4);">申请加好友</div>
+          <div style="display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-3); background: var(--bg-elevated); border-radius: var(--r-md); margin-bottom: var(--sp-4);">
+            <div class="avatar avatar-sm avatar-ai" style="background: linear-gradient(135deg, #7C5CFC, #5C9AFF);">T</div>
+            <div style="font: var(--text-body-medium);">托马斯.福</div>
+          </div>
+          <div style="margin-bottom: var(--sp-4);">
+            <label style="display: block; font: var(--text-caption); color: var(--text-tertiary); margin-bottom: var(--sp-1);">申请原因 <span style="color: var(--text-tertiary);">（选填）</span></label>
+            <textarea style="width: 100%; padding: var(--sp-3); border: 1px solid var(--border-default); border-radius: var(--r-md); background: var(--bg-elevated); color: var(--text-primary); font: var(--text-body); min-height: 80px; resize: none;" placeholder="请输入申请原因..."></textarea>
+          </div>
+          <button class="btn btn-primary" style="width: 100%;">提交申请</button>
+        </div>
+        
+        <h3>线框图（成功回显）</h3>
+        <div class="card" style="padding: var(--sp-10) var(--sp-5); text-align: center;">
+          <div style="width: 64px; height: 64px; border-radius: 50%; background: var(--green-bg); display: flex; align-items: center; justify-content: center; margin: 0 auto var(--sp-4);">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <div style="font: var(--text-body-medium); margin-bottom: var(--sp-2);">申请已提交</div>
+          <div style="font: var(--text-caption); color: var(--text-tertiary); margin-bottom: var(--sp-5);">等待 Owner 审批</div>
+          <button class="btn btn-primary">知道了</button>
+        </div>
+      </section>
+      
+      <!-- Notification -->
+      <section id="notification" class="section">
+        <h1>审批通知</h1>
+        <p>Owner 收到加好友申请时，系统小助手发送消息卡片。</p>
+        
+        <h3>卡片内容</h3>
+        <ul>
+          <li>申请人</li>
+          <li>申请加哪个 Bot</li>
+          <li>申请原因（未填写显示「-」）</li>
+          <li>操作：通过 / 拒绝</li>
+        </ul>
+        
+        <h3>线框图（有申请原因）</h3>
+        <div class="approval-card">
+          <div class="approval-title">📩 好友申请</div>
+          <div class="approval-row"><span>申请人</span><span>张三</span></div>
+          <div class="approval-row"><span>申请 Bot</span><span>小苗</span></div>
+          <div class="approval-reason">「希望添加小苗帮我处理日常工作」</div>
+          <div class="approval-actions">
+            <button class="btn btn-primary">通过</button>
+            <button class="btn btn-secondary">拒绝</button>
+          </div>
+        </div>
+        
+        <h3>线框图（无申请原因）</h3>
+        <div class="approval-card">
+          <div class="approval-title">📩 好友申请</div>
+          <div class="approval-row"><span>申请人</span><span>李四</span></div>
+          <div class="approval-row"><span>申请 Bot</span><span>小苗</span></div>
+          <div class="approval-row"><span>申请原因</span><span style="color: var(--text-tertiary);">-</span></div>
+          <div class="approval-actions">
+            <button class="btn btn-primary">通过</button>
+            <button class="btn btn-secondary">拒绝</button>
+          </div>
+        </div>
+      </section>
+      
+      <!-- Edge Cases -->
+      <section id="edge-cases" class="section">
+        <h1>边界条件</h1>
+        <ul>
+          <li><strong>Bot 没有简介</strong> → 显示「暂无简介」</li>
+          <li><strong>申请被拒绝</strong> → 可重新申请</li>
+        </ul>
+      </section>
+      
+      <!-- Terms -->
+      <section id="terms" class="section">
+        <h1>术语定义</h1>
+        <table>
+          <thead>
+            <tr><th>术语</th><th>定义</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>通讯录</strong></td><td>人 + Bot + 群聊 的统称</td></tr>
+            <tr><td><strong>我的 Bot</strong></td><td>我加好友的 Bot</td></tr>
+            <tr><td><strong>好友</strong></td><td>与 Bot 建立好友关系的用户，可以私聊 Bot</td></tr>
+            <tr><td><strong>Owner</strong></td><td>Bot 的创建者</td></tr>
+          </tbody>
+        </table>
+      </section>
+      
+    </div>
+    
+    <div style="text-align: center; padding: var(--sp-5); color: var(--text-tertiary); font: var(--text-caption);">
+      MVP | 2026-03-18 | Octo v4 Design System
+    </div>
+  </main>
+  
+  <button class="theme-fab" onclick="toggleTheme()" title="切换主题">🌙</button>
+  
+  <script>
+    // Navigation
+    document.querySelectorAll('.nav-item').forEach(item => {
+      item.addEventListener('click', function() {
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        this.classList.add('active');
+        const sectionId = this.getAttribute('data-section');
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        document.getElementById(sectionId).classList.add('active');
+        window.scrollTo(0, 0);
+      });
+    });
+    
+    // Theme toggle
+    function toggleTheme() {
+      const html = document.documentElement;
+      const fab = document.querySelector('.theme-fab');
+      if (html.dataset.theme === 'light') {
+        html.dataset.theme = 'dark';
+        fab.textContent = '🌙';
+      } else {
+        html.dataset.theme = 'light';
+        fab.textContent = '🌞';
+      }
+    }
+  </script>
+</body>
+</html>
