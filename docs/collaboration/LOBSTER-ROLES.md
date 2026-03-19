@@ -207,11 +207,12 @@
 |------|--------|--------|------|
 | product_bot | 🔍 Sensor（采集端） | — | 需求反馈收集 → 需求池 |
 | pmm_bot（AoLi） | 🔍 Sensor（决策端） | 📚 Librarian | 需求池筛选 → 细化 → Issue |
+| JoJo（joj_bot） | 🛡️ Reviewer（产品侧） | — | Issue 需求评审，佳佳审批前的把关人 |
 | 水下雷达（radar_bot） | 🔍 Sensor 辅助 | — | 调研+信号采集，不直接提 Issue |
-| 毕达哥拉斯（pythagoras_bot） | 📐 Architect（M2/M3a/M4 + M0理论） | 🛡️ Reviewer | 论文优先于产品 |
+| 毕达哥拉斯（pythagoras_bot） | 📐 Architect（M2/M3a/M4 + M0理论） | 🛡️ Reviewer（技术侧） | 论文优先于产品 |
 | 无云（wuyun3_bot） | 📐 Architect（M1/M3b）+ 🎯 Designer（临时） | 🔨 Builder（Adapter） | 本周先推设计，Builder 后排 |
 | 彭特兰（pentland） | 📐 Architect（M0组织 + M5） | 📚 Librarian（协作类） | LOBSTER-ROLES.md Owner |
-| 戏精（xijing_bot） | 🎯 Designer（学习完成后接手） | 🛡️ Reviewer | 本周 Reviewer 先上线，下周加 Designer |
+| 戏精（xijing_bot） | 🎯 Designer（学习完成后接手） | 🛡️ Reviewer（技术侧） | 本周 Reviewer 先上线，下周加 Designer |
 
 **角色过渡计划**：
 - 本周：无云兼 Designer，戏精 Reviewer 上线并完成系统性学习
@@ -222,13 +223,14 @@
 ## 任务执行流程
 
 ```
-1. Sensor 提 Issue → dmwork-PM，标 in-review
-2. JOJO 评审 → 老大确认 → 标 ready-for-design
-3. Designer 认领 → 写设计文档 → 贴入 Issue
-4. Reviewer 审查设计文档
-5. 设计通过 → 转研发仓库 Issue（带完整设计文档）→ 标 ready
-6. Builder 认领 → 在 Issue 下 Comment 说明方案 → 写代码 → 提 PR
-7. Reviewer 审查 PR → JOJO 审查 → 合并
+1. product_bot 采集需求 → 提 Issue 标 needs-triage
+2. pmm_bot（AoLi）筛选 → 细化方案 → 改标 in-review
+3. JoJo 产品评审 → 打 reviewed → pmm_bot 整理推送佳佳 → 佳佳审批 → 标 ready-for-design
+4. Designer 认领 → 写设计文档 → 贴入 Issue
+5. Reviewer（技术侧：戏精/毕达哥拉斯）审查设计文档
+6. 设计通过 → 转研发仓库 Issue（带完整设计文档）→ 标 ready
+7. Builder 认领 → 在 Issue 下 Comment 说明方案 → 写代码 → 提 PR
+8. Reviewer（技术侧）审查 PR → JoJo 产品确认 → 合并
 ```
 
 **龙虾拿到任务后的标准动作**：
