@@ -1,4 +1,4 @@
-# LOBSTER-ROLES.md — 龙虾协作角色标准 v1.0
+# LOBSTER-ROLES.md — 龙虾协作角色标准 v1.3
 
 > 定稿日期：2026-03-19
 > Owner：彭特兰（pentland）
@@ -144,7 +144,7 @@
 - 一个 PR 一件事，不混无关改动
 - 引用 Issue：`Closes #XX` 或 `Fixes #XX`
 
-**前置条件**：Issue 已标记 `ready`（设计文档已完成 + Reviewer 已通过）
+**前置条件**：设计文档已完成 + 技术 Reviewer 已通过 → Issue 已转入研发仓库
 
 **Issue 转研发仓库对应关系**：
 - 后端改动 → `dmwork-org/dmworkim`
@@ -172,8 +172,8 @@
 - 可以在 Issue 上标记 `needs-revision` 打回不合格的提交
 
 **审查层级**：
-1. 龙虾侧 Reviewer 先审 → 通过后
-2. JOJO（人类侧 Reviewer）审 → 通过后
+1. 技术 Reviewer（戏精/毕达哥拉斯）先审 → 通过后
+2. JoJo（产品 Reviewer）审产品相关 Issue → 通过后
 3. 品鉴者最终确认（仅重大变更）
 
 ---
@@ -228,18 +228,30 @@
 3. JoJo 产品评审 → 打 reviewed → pmm_bot 整理推送佳佳 → 佳佳审批 → 标 ready-for-design
 4. Designer 认领 → 写设计文档 → 贴入 Issue
 5. Reviewer（技术侧：戏精/毕达哥拉斯）审查设计文档
-6. 设计通过 → 转研发仓库 Issue（带完整设计文档）→ 标 ready
+6. 设计通过 → 转研发仓库 Issue（带完整设计文档）
 7. Builder 认领 → 在 Issue 下 Comment 说明方案 → 写代码 → 提 PR
 8. Reviewer（技术侧）审查 PR → JoJo 产品确认 → 合并
 ```
 
 **龙虾拿到任务后的标准动作**：
-1. 读 `LOBSTER-ROLES.md` → 确认自己的角色
+0. `git pull dmwork-PM` → 确保读到最新版本的文档
+1. 读 `LOBSTER-ROLES.md` → 确认自己的角色和标签流程
 2. 读 `module-architecture` → 确认任务涉及哪些模块
-3. 查影响范围表 → 确认改动会波及谁
-4. 在 Issue 下声明：我以 [角色] 身份参与 / 我的方案是 [简述] / 预计影响模块：[列表]
-5. 等 Owner 确认 → 开工
-6. 完成后更新文档 → 通知相关龙虾
+3. 读 `glossary.md` → 确认术语一致
+4. 查 `decisions.md` → 有没有相关的品鉴者决策
+5. 在 Issue 下声明：我以 [角色] 身份参与 / 我的方案是 [简述] / 预计影响模块：[列表]
+6. 等 Owner 确认 → 开工
+7. 完成后更新文档 → 通知相关龙虾
+
+**各角色执行前必读清单**：
+
+| 角色 | 执行前必读 | 为什么 |
+|------|-----------|--------|
+| **所有龙虾** | `LOBSTER-ROLES.md` | 角色、流程、标签体系 |
+| **Designer** | `module-architecture-v1.md` + `glossary.md` + 对应 Issue | 模块边界 + 统一术语 + 需求理解 |
+| **Builder** | 对应的 `design/issue-NNN-*.md` + 目标仓库 `CONTRIBUTING.md` | 设计文档是靶子，CONTRIBUTING 是规范 |
+| **Reviewer** | `module-architecture-v1.md` + 被审查的设计文档或 PR | 审查标准 |
+| **Sensor** | `glossary.md` + dmwork-PM 已有 Issue 列表 | 避免重复提 Issue、术语一致 |
 
 ---
 
@@ -317,6 +329,65 @@ product_bot 提 Issue (needs-triage)
 
 ---
 
+## 文档管理机制
+
+> 佳佳 2026-03-19 提出：文档存在不够，必须有读写机制
+
+### 文档分类
+
+**宪法级（写得慢、读得频）：**
+
+| 文档 | Owner | 更新触发 |
+|------|-------|---------|
+| `docs/collaboration/LOBSTER-ROLES.md` | 彭特兰 | 角色/标签/流程变更 |
+| `docs/architecture/module-architecture-v1.md` | 毕达哥拉斯 | 架构决策变更 |
+| `docs/architecture/glossary.md` | 毕达哥拉斯 | 新术语出现 |
+| `docs/architecture/decisions.md` | pmm_bot（Librarian）| 每次品鉴者决策后 24h 内 |
+
+**作战级（按 Issue 产出）：**
+
+| 文档 | Owner | 创建时机 |
+|------|-------|---------|
+| `docs/design/issue-NNN-简述.md` | Designer（当前无云，后续戏精） | Issue 标 `in-design` 时 |
+
+### 更新通知规则
+
+宪法级文档更新后，Owner 必须在群里发通知：
+```
+[文档更新] LOBSTER-ROLES.md v1.3
+变更：加入文档管理机制 + Onboarding 模块
+影响角色：所有龙虾
+```
+
+作战级设计文档更新后，在对应 Issue 下 Comment 说明。
+
+### 周度文档对齐
+
+每周一，Librarian（pmm_bot + 彭特兰）检查：
+- 文档和实际执行是否一致
+- 讨论结论是否已写入文档
+- 术语表是否需要补充
+- 5 分钟快检，发现问题 @ 对应 Owner
+
+---
+
+## 新龙虾 Onboarding
+
+新龙虾加入项目，按以下顺序读文档：
+
+1. **`LOBSTER-ROLES.md`** → 角色体系、标签流程、你该干什么
+2. **`module-architecture-v1.md`** → 系统全貌、模块边界
+3. **`glossary.md`** → 统一语言，29 条术语
+4. **对应仓库的 `CONTRIBUTING.md`** → PR 规范、Issue 模板
+5. **确认 GitHub 身份和仓库权限** → 避免权限死锁（教训：pkuWMH 事件）
+
+Onboarding 完成后，在群里声明：
+```
+[Onboarding 完成] 我是 XXX，已读完必读文档，我的角色是 YYY
+```
+
+---
+
 ## 待品鉴者确认
 
 1. ~~product_bot 和 pmm_bot 的关系~~ → 已确认（见上）
@@ -337,3 +408,4 @@ product_bot 提 Issue (needs-triage)
 | — | — | product_bot/pmm_bot 关系澄清（采集端/决策端） | 佳佳定义 |
 | v1.2 | 2026-03-19 | 标签体系写入独立模块；`ready` 与 `ready-for-design` 合并 | 佳佳要求 + 三方共识 |
 | — | — | 研发仓库标签由戏精负责定义 | 佳佳指定 |
+| v1.3 | 2026-03-19 | 文档管理机制 + Onboarding 模块 + Builder 前置条件修复 + 按角色必读清单 | 佳佳提出 + 三方收敛 |
