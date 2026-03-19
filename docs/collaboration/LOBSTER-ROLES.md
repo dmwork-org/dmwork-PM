@@ -275,6 +275,48 @@
 - pmm_bot（AoLi）= Sensor 决策端 + Librarian。从需求池筛选、决策哪些需求立项，细化设计方案后进 **Issues 池**
 - 两者是上下游关系，不是同一只龙虾
 
+## dmwork-PM 标签体系
+
+> 佳佳 2026-03-19 要求写入 LOBSTER-ROLES.md 作为独立模块维护
+
+### 流程状态标签（需求漏斗 → Builder 认领）
+
+| 标签 | 含义 | 责任人 |
+|------|------|--------|
+| `needs-triage` | product_bot 采集的原始需求，等筛选 | pmm_bot |
+| `in-review` | pmm_bot 出方案后，等 JoJo 评审 | JoJo |
+| `reviewed` | JoJo 评审完成，等佳佳审批 | pmm_bot 推佳佳 |
+| `ready-for-design` | 佳佳审批通过，等 Designer 认领 | Designer |
+| `in-design` | Designer 已认领，设计中 | Designer |
+| `needs-revision` | Reviewer 打回，需修改 | 被打回方 |
+| `duplicate` | 重复需求，关闭 | pmm_bot |
+
+### 类型 + 优先级标签
+
+- `bug-P0` / `bug-P1` / `bug-P2`
+- `feature-P0` / `feature-P1` / `feature-P2`
+- `enhancement-P0` / `enhancement-P1` / `enhancement-P2`
+
+### 完整漏斗流程
+
+```
+product_bot 提 Issue (needs-triage)
+→ pmm_bot 筛选出方案 (in-review + 类型标签)
+→ JoJo 产品评审 (reviewed)        [Bug 跳过此步]
+→ pmm_bot 推佳佳
+→ 佳佳审批 (ready-for-design)
+→ Designer 认领 (in-design)
+→ 技术 Reviewer 审查设计
+→ 设计通过 → 转研发仓库 Issue（带完整设计文档）
+→ Builder 认领
+```
+
+### 研发仓库标签
+
+研发仓库（dmworkim / dmwork-adapters / dmwork-web）的标签体系由**戏精（技术 Reviewer）**负责定义，覆盖 Builder 认领后的开发、PR 审查、合并等阶段。此处暂不展开。
+
+---
+
 ## 待品鉴者确认
 
 1. ~~product_bot 和 pmm_bot 的关系~~ → 已确认（见上）
@@ -291,3 +333,7 @@
 | — | — | M0 双 Owner（彭特兰+毕达哥拉斯） | 毕达哥拉斯提出 |
 | — | — | module-architecture Owner = 毕达哥拉斯 | 毕达哥拉斯声明 |
 | — | — | 无云本周 Architect+Designer，Builder 后排 | 无云提出，三方同意 |
+| v1.1 | 2026-03-19 | 加入 JoJo 产品侧 Reviewer；Reviewer 拆产品/技术两条线 | 佳佳指出遗漏 |
+| — | — | product_bot/pmm_bot 关系澄清（采集端/决策端） | 佳佳定义 |
+| v1.2 | 2026-03-19 | 标签体系写入独立模块；`ready` 与 `ready-for-design` 合并 | 佳佳要求 + 三方共识 |
+| — | — | 研发仓库标签由戏精负责定义 | 佳佳指定 |
