@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BotFather 卡片化交互 PRD — Octo Design</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      /* Octo v4 Tokens — Light */
+      --bg-deep: #F0F1F5;
+      --bg-base: #F7F8FA;
+      --bg-surface: #FFFFFF;
+      --bg-elevated: #F0F1F5;
+      --bg-hover: #EAEBF0;
+      --bg-active: #E2E3EA;
+      --ai-panel-bg: #FAFAFF;
+
+      --text-primary: #1A1C24;
+      --text-secondary: #5C6070;
+      --text-tertiary: #9498A8;
+      --text-accent: #6B4FD8;
+
+      --brand1: #7C5CFC;
+      --brand2: #00D4AA;
+      --btn-primary: #008F76;
+      --btn-primary-hover: #007A66;
+      --btn-ai: #5B3FD1;
+      --btn-danger: #D32F2F;
+      --btn-danger-light: #FDEAEA;
+
+      --green: #00B894;
+      --green-bg: #E6F7F3;
+      --amber: #E6930A;
+      --amber-bg: #FFF8E6;
+      --red: #E5405E;
+      --red-bg: #FEF0F0;
+      --blue: #4A85E6;
+
+      --r-xs: 4px;
+      --r-sm: 6px;
+      --r-md: 10px;
+      --r-lg: 14px;
+      --r-xl: 20px;
+      --r-full: 9999px;
+
+      --ease: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    body {
+      font-family: 'Inter', 'PingFang SC', 'Noto Sans SC', -apple-system, sans-serif;
+      background: var(--bg-base);
+      color: var(--text-primary);
+      line-height: 1.6;
+      font-size: 14px;
+    }
+
+    /* 布局 */
+    .app { display: flex; min-height: 100vh; }
+
+    /* 侧边栏 */
+    .sidebar {
+      width: 240px;
+      background: var(--bg-surface);
+      border-right: 1px solid var(--bg-elevated);
+      position: fixed;
+      height: 100vh;
+      overflow-y: auto;
+      padding: 20px 0;
+    }
+    .sidebar-title {
+      font-size: 14px;
+      font-weight: 700;
+      padding: 0 20px;
+      margin-bottom: 20px;
+      background: linear-gradient(135deg, var(--brand1), var(--brand2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .nav-group { margin-bottom: 20px; }
+    .nav-group-title {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 0 20px;
+      margin-bottom: 8px;
+    }
+    .nav-item {
+      display: block;
+      padding: 8px 20px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.15s var(--ease);
+      border-left: 3px solid transparent;
+    }
+    .nav-item:hover { background: var(--bg-hover); color: var(--text-accent); }
+    .nav-item.active {
+      background: var(--ai-panel-bg);
+      color: var(--text-accent);
+      border-left-color: var(--brand1);
+      font-weight: 500;
+    }
+
+    /* 主内容 */
+    .main {
+      flex: 1;
+      margin-left: 240px;
+      padding: 32px 40px;
+      max-width: 820px;
+    }
+
+    /* 页面 */
+    .page { display: none; }
+    .page.active { display: block; }
+
+    /* 页面头部 */
+    .page-header {
+      margin-bottom: 32px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--bg-elevated);
+    }
+    .page-title {
+      font-size: 22px;
+      font-weight: 800;
+      margin-bottom: 8px;
+      letter-spacing: -0.5px;
+    }
+    .page-desc { color: var(--text-secondary); font-size: 14px; }
+
+    /* 流程步骤 */
+    .flow-section { margin-bottom: 40px; }
+    .flow-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-accent);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .flow-title::before {
+      content: '';
+      width: 8px;
+      height: 8px;
+      background: linear-gradient(135deg, var(--brand1), var(--brand2));
+      border-radius: 50%;
+    }
+    .flow-desc { color: var(--text-secondary); font-size: 13px; margin-bottom: 16px; }
+
+    /* 原型框 */
+    .prototype {
+      background: var(--bg-deep);
+      border-radius: var(--r-xl);
+      padding: 20px;
+      max-width: 400px;
+    }
+    .prototype-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--bg-hover);
+    }
+    .prototype-avatar {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, var(--brand1), var(--brand2));
+      border-radius: var(--r-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 700;
+      position: relative;
+    }
+    .prototype-avatar::after {
+      content: '⚡';
+      position: absolute;
+      bottom: -3px;
+      right: -3px;
+      width: 14px;
+      height: 14px;
+      background: linear-gradient(135deg, var(--brand1), var(--brand2));
+      border-radius: var(--r-xs);
+      font-size: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1.5px solid var(--bg-deep);
+    }
+    .prototype-name { font-weight: 600; font-size: 14px; }
+
+    .card {
+      background: var(--bg-surface);
+      border-radius: var(--r-lg);
+      padding: 16px;
+      margin-bottom: 12px;
+      box-shadow: 0 1px 3px rgba(26,28,36,0.06);
+    }
+    .card:last-child { margin-bottom: 0; }
+
+    .bot-list-card { padding: 0; overflow: hidden; }
+    .bot-list-header {
+      padding: 12px 16px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      border-bottom: 1px solid var(--bg-elevated);
+      background: var(--bg-base);
+    }
+    .bot-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      cursor: pointer;
+      transition: background 0.15s var(--ease);
+    }
+    .bot-item:hover { background: var(--bg-hover); }
+    .bot-item:not(:last-child) { border-bottom: 1px solid var(--bg-elevated); }
+    .bot-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--r-sm);
+      background: linear-gradient(135deg, #E8E0FF, #C7F5E8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+    .bot-info { flex: 1; }
+    .bot-name { font-weight: 500; font-size: 14px; }
+    .bot-id { font-size: 12px; color: var(--text-tertiary); font-family: 'JetBrains Mono', monospace; }
+    .bot-status {
+      padding: 2px 8px;
+      border-radius: var(--r-full);
+      font-size: 11px;
+      font-weight: 500;
+    }
+    .bot-status.online { background: var(--green-bg); color: var(--green); }
+    .bot-status.offline { background: var(--bg-elevated); color: var(--text-tertiary); }
+    .bot-arrow { color: var(--text-tertiary); font-size: 16px; }
+
+    .input-card { border: 2px solid var(--brand1); }
+    .input-card-title { font-weight: 700; font-size: 16px; margin-bottom: 16px; }
+    .input-group { margin-bottom: 14px; }
+    .input-label { font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; font-weight: 500; }
+    .input-field {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid var(--bg-active);
+      border-radius: var(--r-md);
+      font-size: 14px;
+      background: var(--bg-base);
+      font-family: inherit;
+      transition: border-color 0.2s var(--ease);
+    }
+    .input-field:focus { border-color: var(--brand1); background: var(--bg-surface); outline: none; }
+    .input-hint { font-size: 11px; color: var(--text-tertiary); margin-top: 4px; }
+    .input-error { color: var(--red); }
+
+    .primary-btn {
+      width: 100%;
+      padding: 12px;
+      background: var(--btn-primary);
+      color: #fff;
+      border: none;
+      border-radius: var(--r-md);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 12px;
+      transition: background 0.2s var(--ease);
+      font-family: inherit;
+    }
+    .primary-btn:hover { background: var(--btn-primary-hover); }
+
+    .btn {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: var(--r-md);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: inherit;
+      transition: opacity 0.15s var(--ease);
+    }
+    .btn:hover { opacity: 0.9; }
+    .btn.danger { background: var(--btn-danger); color: #fff; }
+    .btn.warning { background: var(--amber); color: #fff; }
+    .btn.success { background: var(--btn-primary); color: #fff; }
+    .btn.cancel { background: var(--bg-elevated); color: var(--text-secondary); }
+    .btn-row { display: flex; gap: 8px; }
+
+    .success-card { background: var(--green-bg); }
+    .success-header { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+    .success-icon {
+      width: 32px; height: 32px;
+      background: var(--bg-surface);
+      border-radius: var(--r-full);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px;
+    }
+    .success-title { font-weight: 600; font-size: 14px; color: #0D6B4F; }
+    .success-desc { font-size: 13px; color: #0D6B4F; }
+
+    .danger-card { border: 2px solid #FECACA; }
+    .danger-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+    .danger-icon { font-size: 18px; }
+    .danger-title { font-weight: 600; color: var(--btn-danger); }
+    .danger-desc { font-size: 13px; color: var(--text-secondary); margin-bottom: 14px; }
+
+    .config-card {
+      background: linear-gradient(135deg, #1A1C24, #262A36);
+      color: #E4E6ED;
+    }
+    .config-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .config-icon {
+      width: 28px; height: 28px;
+      background: rgba(124,92,252,0.2);
+      border-radius: var(--r-sm);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .config-title { font-weight: 600; font-size: 14px; }
+    .config-desc { font-size: 13px; color: #9CA1B3; margin-bottom: 14px; }
+    .config-preview {
+      background: rgba(255,255,255,0.06);
+      border-radius: var(--r-sm);
+      padding: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      word-break: break-all;
+      color: #B0A4FF;
+    }
+    .config-tip {
+      display: flex; align-items: center; gap: 6px;
+      margin-top: 12px;
+      font-size: 11px;
+      color: #FFAD33;
+    }
+
+    .token-card {
+      background: linear-gradient(135deg, #111318, #1E212B);
+      color: #E4E6ED;
+    }
+    .token-bot-info { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+    .token-label { font-size: 10px; color: #7A7F96; text-transform: uppercase; letter-spacing: 1px; }
+    .token-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      background: rgba(255,255,255,0.08);
+      padding: 10px 12px;
+      border-radius: var(--r-sm);
+      word-break: break-all;
+      margin: 6px 0 12px;
+      color: #B0A4FF;
+    }
+    .token-warning { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #FFAD33; }
+
+    .request-card { border: 2px solid #FEF3C7; background: #FFFBEB; }
+    .request-header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+    .request-title { font-weight: 600; color: #92400E; }
+    .request-user {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px;
+      background: var(--bg-surface);
+      border-radius: var(--r-md);
+      margin-bottom: 12px;
+    }
+    .user-avatar {
+      width: 36px; height: 36px;
+      border-radius: var(--r-full);
+      background: linear-gradient(135deg, #FDE68A, #FCD34D);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+    }
+
+    .empty-state { text-align: center; padding: 32px 20px; color: var(--text-tertiary); }
+    .empty-icon { font-size: 32px; margin-bottom: 10px; }
+    .empty-text { font-size: 13px; line-height: 1.8; }
+
+    .help-list { font-size: 13px; line-height: 2.2; }
+    .help-list code {
+      background: var(--ai-panel-bg);
+      padding: 2px 8px;
+      border-radius: var(--r-xs);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--text-accent);
+    }
+
+    .user-msg { display: flex; justify-content: flex-end; margin-bottom: 12px; }
+    .user-msg-bubble {
+      background: var(--bg-elevated);
+      color: var(--text-primary);
+      padding: 10px 14px;
+      border-radius: 2px var(--r-lg) var(--r-lg) var(--r-lg);
+      font-size: 14px;
+      max-width: 80%;
+    }
+
+    .flow-arrow {
+      display: flex; align-items: center; justify-content: center;
+      padding: 16px 0;
+      color: var(--text-accent);
+    }
+    .flow-arrow span {
+      background: var(--ai-panel-bg);
+      padding: 6px 14px;
+      border-radius: var(--r-full);
+      font-size: 12px;
+      display: flex; align-items: center; gap: 6px;
+      font-weight: 500;
+    }
+
+    .cmd-menu { padding: 0; overflow: hidden; }
+    .cmd-menu-header {
+      padding: 10px 16px;
+      font-size: 12px;
+      color: var(--text-tertiary);
+      background: var(--bg-base);
+      border-bottom: 1px solid var(--bg-elevated);
+      font-weight: 500;
+    }
+    .cmd-item { padding: 10px 16px; border-bottom: 1px solid var(--bg-elevated); cursor: pointer; transition: background 0.15s var(--ease); }
+    .cmd-item:last-child { border-bottom: none; }
+    .cmd-item:hover { background: var(--bg-hover); }
+    .cmd-name { font-weight: 500; font-size: 14px; color: var(--text-accent); font-family: 'JetBrains Mono', monospace; }
+    .cmd-desc { font-size: 12px; color: var(--text-tertiary); margin-top: 2px; }
+
+    .highlight {
+      background: var(--amber-bg);
+      border: 2px solid #FCD34D;
+      border-radius: var(--r-md);
+      padding: 10px 12px;
+      margin-bottom: 12px;
+    }
+    .highlight-label { font-size: 10px; color: #92400E; font-weight: 600; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    @media (max-width: 700px) {
+      .sidebar { display: none; }
+      .main { margin-left: 0; padding: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <nav class="sidebar">
+      <div class="sidebar-title">🐙 BotFather PRD</div>
+      <div class="nav-group">
+        <div class="nav-group-title">概述</div>
+        <a class="nav-item active" data-page="overview">概述</a>
+        <a class="nav-item" data-page="entry">入口与触发</a>
+        <a class="nav-item" data-page="design">设计原则</a>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-title">Bot 管理</div>
+        <a class="nav-item" data-page="quickstart">/quickstart</a>
+        <a class="nav-item" data-page="newbot">/newbot</a>
+        <a class="nav-item" data-page="mybots">/mybots</a>
+        <a class="nav-item" data-page="connect">/connect</a>
+        <a class="nav-item" data-page="disconnect">/disconnect</a>
+        <a class="nav-item" data-page="setname">/setname</a>
+        <a class="nav-item" data-page="setdesc">/setdescription</a>
+        <a class="nav-item" data-page="token">/token</a>
+        <a class="nav-item" data-page="revoke">/revoke</a>
+        <a class="nav-item" data-page="deletebot">/deletebot</a>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-title">好友申请</div>
+        <a class="nav-item" data-page="friend-notify">申请通知</a>
+        <a class="nav-item" data-page="pending">/pending</a>
+        <a class="nav-item" data-page="approve">/approve</a>
+        <a class="nav-item" data-page="reject">/reject</a>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-title">其他</div>
+        <a class="nav-item" data-page="help">/help</a>
+        <a class="nav-item" data-page="cancel">/cancel</a>
+        <a class="nav-item" data-page="error">异常处理</a>
+      </div>
+    </nav>
+    <main class="main">
+      <div class="page active" id="page-overview">
+        <div class="page-header">
+          <h1 class="page-title">BotFather 卡片化交互</h1>
+          <p class="page-desc">将 BotFather 纯文本响应升级为可交互卡片，提升用户体验</p>
+        </div>
+        <div class="flow-section">
+          <div class="flow-title">目标</div>
+          <ul style="color: var(--text-secondary); padding-left: 20px; font-size: 14px; line-height: 2;">
+            <li>点击代替输入序号，减少操作步骤</li>
+            <li>一键复制敏感信息（Token、API Key）</li>
+            <li>危险操作增加二次确认</li>
+            <li>视觉层次清晰，信息易读</li>
+          </ul>
+        </div>
+        <div class="flow-section">
+          <div class="flow-title">覆盖命令</div>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+            <span style="background: var(--ai-panel-bg); padding: 4px 12px; border-radius: var(--r-sm); font-size: 13px; color: var(--text-accent); font-family: 'JetBrains Mono', monospace;">/quickstart</span>
+            <span style="background: var(--ai-panel-bg); padding: 4px 12px; border-radius: var(--r-sm); font-size: 13px; color: var(--text-accent); font-family: 'JetBrains Mono', monospace;">/newbot</span>
+            <span style="background: var(--ai-panel-bg); padding: 4px 12px; border-radius: var(--r-sm); font-size: 13px; color: var(--text-accent); font-family: 'JetBrains Mono', monospace;">/mybots</span>
+            <span style="background: var(--ai-panel-bg); padding: 4px 12px; border-radius: var(--r-sm); font-size: 13px; color: var(--text-accent); font-family: 'JetBrains Mono', monospace;">/connect</span>
+            <span style="background: var(--ai-panel-bg); padding: 4px 12px; border-radius: var(--r-sm); font-size: 13px; color: var(--text-accent); font-family: 'JetBrains Mono', monospace;">/disconnect</span>
+            <span style="background: var(--ai-panel-bg); padding: 4px 12px; border-radius: var(--r-sm); font-size: 13px; color: var(--text-accent); font-family: 'JetBrains Mono', monospace;">/setname</span>
+            <span style="background: var(--ai-panel-bg); padding: 4px 12px; border-radius: var(--r-sm); font-size: 13px; color: var(--text-accent); font-family: 'JetBrains Mono', monospace;">/setdescription</span>
+            <span style="background: var(--ai-panel-bg); padding: 4px 12px; border-radius: var(--r-sm); font-size: 13px; color: var(--text-accent); font-family: 'JetBrains Mono', monospace;">/token</span>
+            <span style="background: var(--ai-panel-bg); padding: 4px 12px; border-radius: var(--r-sm); font-size: 13px; color: var(--text-accent); font-family: 'JetBrains Mono', monospace;">/revoke</span>
+            <span style="background: var(--ai-panel-bg); padding: 4px 12px; border-radius: var(--r-sm); font-size: 13px; color: var(--text-accent); font-family: 'JetBrains Mono', monospace;">/deletebot</span>
+            <span style="background: var(--ai-panel-bg); padding: 4px 12px; border-radius: var(--r-sm); font-size: 13px; color: var(--text-accent); font-family: 'JetBrains Mono', monospace;">/pending</span>
+            <span style="background: var(--ai-panel-bg); padding: 4px 12px; border-radius: var(--r-sm); font-size: 13px; color: var(--text-accent); font-family: 'JetBrains Mono', monospace;">/approve</span>
+            <span style="background: var(--ai-panel-bg); padding: 4px 12px; border-radius: var(--r-sm); font-size: 13px; color: var(--text-accent); font-family: 'JetBrains Mono', monospace;">/reject</span>
+            <span style="background: var(--ai-panel-bg); padding: 4px 12px; border-radius: var(--r-sm); font-size: 13px; color: var(--text-accent); font-family: 'JetBrains Mono', monospace;">/help</span>
+            <span style="background: var(--ai-panel-bg); padding: 4px 12px; border-radius: var(--r-sm); font-size: 13px; color: var(--text-accent); font-family: 'JetBrains Mono', monospace;">/cancel</span>
+          </div>
+        </div>
+        <p style="color: var(--text-tertiary); font-size: 12px; margin-top: 40px;">版本 1.0 | 2026-03-20 | 作者：苗 | 设计：花花 🌸</p>
+      </div>
+    </main>
+  </div>
+  <script>
+    const navItems = document.querySelectorAll('.nav-item');
+    const pages = document.querySelectorAll('.page');
+    navItems.forEach(item => {
+      item.addEventListener('click', () => {
+        const pageId = 'page-' + item.dataset.page;
+        navItems.forEach(n => n.classList.remove('active'));
+        item.classList.add('active');
+        pages.forEach(p => p.classList.remove('active'));
+        document.getElementById(pageId).classList.add('active');
+        window.scrollTo(0, 0);
+      });
+    });
+  </script>
+</body>
+</html>
