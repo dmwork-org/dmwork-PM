@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PRD: AI 看板（Owner Dashboard）</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6; color: #333; background: #f5f5f5;
+        }
+        
+        /* Navigation */
+        .nav {
+            position: fixed; top: 0; left: 0; width: 220px; height: 100vh;
+            background: white; border-right: 1px solid #e0e0e0; padding: 20px;
+            overflow-y: auto; z-index: 100;
+        }
+        .nav-title { font-size: 14px; font-weight: 700; margin-bottom: 16px; color: #1a1a1a; }
+        .nav-section { font-size: 11px; color: #888; margin-top: 16px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .nav-item {
+            display: block; padding: 8px 12px; margin: 2px 0; border-radius: 6px;
+            font-size: 13px; color: #555; text-decoration: none; cursor: pointer;
+            transition: all 0.15s;
+        }
+        .nav-item:hover { background: #f3f4f6; color: #1a1a1a; }
+        .nav-item.active { background: #4F46E5; color: white; }
+        .nav-item.sub { padding-left: 24px; font-size: 12px; }
+        
+        /* Main Content */
+        .main { margin-left: 220px; padding: 40px 60px; }
+        .container {
+            max-width: 1100px; margin: 0 auto; background: white;
+            padding: 48px; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        }
+        
+        /* Sections */
+        .section { display: none; }
+        .section.active { display: block; }
+        
+        h1 { font-size: 26px; margin-bottom: 8px; color: #1a1a1a; }
+        h2 { font-size: 18px; margin-top: 36px; margin-bottom: 16px; color: #1a1a1a; padding-bottom: 8px; border-bottom: 1px solid #eee; }
+        h3 { font-size: 15px; margin-top: 28px; margin-bottom: 12px; color: #333; }
+        h4 { font-size: 14px; margin-top: 20px; margin-bottom: 10px; color: #444; }
+        p { margin-bottom: 12px; color: #555; font-size: 14px; }
+        .subtitle { color: #666; margin-bottom: 28px; font-size: 14px; }
+        .meta { display: inline-block; background: #f0f0f0; padding: 4px 12px; border-radius: 4px; font-size: 12px; color: #666; margin-right: 8px; }
+        
+        ul { margin-left: 20px; margin-bottom: 16px; }
+        li { margin-bottom: 6px; font-size: 14px; }
+        
+        table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px; }
+        th, td { padding: 10px 12px; text-align: left; border: 1px solid #e0e0e0; }
+        th { background: #f8f9fa; font-weight: 600; }
+        
+        .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; }
+        .tag-mvp { background: #dbeafe; color: #1d4ed8; }
+        .tag-p1 { background: #fef3c7; color: #92400e; }
+        
+        .note { background: #FEF3C7; border: 1px solid #F59E0B; border-radius: 8px; padding: 12px 16px; margin: 16px 0; font-size: 13px; }
+        .note-title { font-weight: 600; color: #92400E; margin-bottom: 4px; }
+        .note p { margin: 0; color: #78350F; }
+        
+        /* Dashboard Styles */
+        .dashboard { background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 12px; padding: 24px; margin: 20px 0; }
+        .dash-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid #e0e0e0; }
+        .dash-title { display: flex; align-items: center; gap: 12px; }
+        .dash-avatar { width: 52px; height: 52px; background: linear-gradient(135deg, #7C5CFC 0%, #00D4AA 100%); border-radius: 14px; display: flex; align-items: center; justify-content: center; color: white; font-size: 22px; }
+        .dash-name { font-size: 18px; font-weight: 600; }
+        .dash-status { font-size: 13px; color: #059669; display: flex; align-items: center; gap: 4px; }
+        .dash-status::before { content: ''; width: 6px; height: 6px; background: #059669; border-radius: 50%; }
+        .dash-actions { display: flex; gap: 10px; align-items: center; }
+        .dash-btn { padding: 8px 14px; border-radius: 6px; font-size: 13px; border: none; cursor: pointer; font-weight: 500; }
+        .dash-btn-primary { background: #4F46E5; color: white; }
+        .dash-btn-secondary { background: #e5e7eb; color: #374151; }
+        .select { padding: 8px 12px; background: white; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 13px; cursor: pointer; }
+        
+        .stats-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 20px; }
+        .stat-box { background: white; border: 1px solid #e0e0e0; border-radius: 10px; padding: 18px; text-align: center; cursor: pointer; transition: all 0.15s; }
+        .stat-box:hover { border-color: #4F46E5; box-shadow: 0 2px 8px rgba(79,70,229,0.1); }
+        .stat-value { font-size: 28px; font-weight: 700; color: #1a1a1a; }
+        .stat-label { font-size: 12px; color: #888; margin-top: 2px; }
+        .stat-change { font-size: 11px; margin-top: 4px; }
+        .stat-up { color: #059669; }
+        .stat-down { color: #dc2626; }
+        
+        .dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .dash-card { background: white; border: 1px solid #e0e0e0; border-radius: 10px; padding: 18px; }
+        .dash-card-header { font-size: 14px; font-weight: 600; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; }
+        .dash-card-link { font-size: 12px; color: #4F46E5; cursor: pointer; font-weight: 500; }
+        
+        .simple-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f0f0f0; font-size: 13px; }
+        .simple-row:last-child { border-bottom: none; }
+        .simple-row-sub { font-size: 11px; color: #888; }
+        
+        /* List */
+        .list-card { background: white; border: 1px solid #e0e0e0; border-radius: 10px; margin: 16px 0; max-width: 500px; }
+        .list-header { padding: 14px 18px; border-bottom: 1px solid #eee; font-size: 14px; font-weight: 600; display: flex; justify-content: space-between; }
+        .list-item { display: flex; align-items: center; padding: 12px 18px; gap: 12px; border-bottom: 1px solid #f0f0f0; }
+        .list-item:last-child { border-bottom: none; }
+        .list-avatar { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; }
+        .list-content { flex: 1; }
+        .list-name { font-size: 14px; font-weight: 500; }
+        .list-desc { font-size: 11px; color: #888; }
+        
+        /* Card */
+        .card { background: white; border: 1px solid #e0e0e0; border-radius: 12px; padding: 20px; margin: 16px 0; max-width: 360px; }
+        .card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+        .card-avatar { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 600; }
+        .card-info { flex: 1; }
+        .card-name { font-size: 15px; font-weight: 600; }
+        .card-sub { font-size: 12px; color: #888; }
+        
+        /* Privacy */
+        .privacy-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+        .privacy-box { padding: 16px; border-radius: 8px; }
+        .privacy-can { background: #D1FAE5; border: 1px solid #059669; }
+        .privacy-cannot { background: #FEE2E2; border: 1px solid #DC2626; }
+        .privacy-title { font-weight: 600; margin-bottom: 8px; font-size: 14px; }
+        .privacy-can .privacy-title { color: #059669; }
+        .privacy-cannot .privacy-title { color: #DC2626; }
+        .privacy-list { list-style: none; font-size: 13px; margin: 0; }
+        .privacy-list li { padding: 3px 0; }
+        .privacy-can .privacy-list li::before { content: "✓ "; color: #059669; }
+        .privacy-cannot .privacy-list li::before { content: "✗ "; color: #DC2626; }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .nav { display: none; }
+            .main { margin-left: 0; padding: 20px; }
+            .stats-row { grid-template-columns: repeat(2, 1fr); }
+            .dash-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="nav">
+        <div class="nav-title">📊 PRD: AI 看板</div>
+        
+        <div class="nav-section">概述</div>
+        <a class="nav-item active" data-section="overview">背景与目标</a>
+        <a class="nav-item" data-section="scope">功能范围</a>
+        
+        <div class="nav-section">看板模块</div>
+        <a class="nav-item" data-section="dashboard">看板主页</a>
+        <a class="nav-item sub" data-section="user-list">用户列表</a>
+        <a class="nav-item sub" data-section="group-list">群聊列表</a>
+        <a class="nav-item sub" data-section="space-list">Space 列表</a>
+        <a class="nav-item sub" data-section="work-log">工作日志</a>
+        
+        <div class="nav-section">附录</div>
+        <a class="nav-item" data-section="terms">术语定义</a>
+        <a class="nav-item" data-section="privacy">隐私边界</a>
+        <a class="nav-item" data-section="edge-cases">边界条件</a>
+    </nav>
+    
+    <!-- Main Content -->
+    <main class="main">
+        <div class="container">
+            
+            <!-- Section: Overview -->
+            <section id="overview" class="section active">
+                <h1>PRD: AI 看板（Owner Dashboard）</h1>
+                <p class="subtitle">
+                    <span class="meta">优先级：P0</span>
+                    <span class="meta">状态：Draft</span>
+                    <span class="meta">作者：刘乐君</span>
+                    <span class="meta">版本：v1.0</span>
+                </p>
+                
+                <h2>背景</h2>
+                <p>Octo 的核心理念是<strong>「AI 归个人，协作无边界」</strong>—— 每个人拥有自己的 AI，可以被添加到多个 Space（组织/企业空间）与他人协作。</p>
+                <p>Owner 需要一个<strong>全局视角</strong>来了解自己 Bot 的使用情况，包括：谁在用、用了多少、在哪些 Space、工作轨迹等。同时需要保护用户隐私——<strong>管理权 ≠ 偷窥权</strong>。</p>
+                
+                <h2>用户故事</h2>
+                <ul>
+                    <li><strong>作为 Owner</strong>，我希望看到 Bot 的全局使用统计（跨 Space）</li>
+                    <li><strong>作为 Owner</strong>，我希望知道 Bot 在哪些 Space，每个 Space 有多少群</li>
+                    <li><strong>作为 Owner</strong>，我希望看到用户和群聊的 Token 消耗排行</li>
+                    <li><strong>作为 Owner</strong>，我希望查看 Bot 的工作轨迹（不含对话内容）</li>
+                    <li><strong>作为 Owner</strong>，我希望了解 Bot 的响应速度和健康状态</li>
+                </ul>
+                
+                <h2>核心原则</h2>
+                <div class="note">
+                    <div class="note-title">🔒 隐私保护</div>
+                    <p>Owner 能看统计数据，不能看对话内容。管理权 ≠ 偷窥权。</p>
+                </div>
+            </section>
+            
+            <!-- Section: Scope -->
+            <section id="scope" class="section">
+                <h1>功能范围</h1>
+                
+                <table>
+                    <thead>
+                        <tr><th>模块</th><th>功能</th><th>优先级</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>看板主页</td><td>5 个核心指标 + 用户/群聊使用情况</td><td><span class="tag tag-mvp">MVP</span></td></tr>
+                        <tr><td>用户列表</td><td>私聊用户 Token 消耗排行</td><td><span class="tag tag-mvp">MVP</span></td></tr>
+                        <tr><td>群聊列表</td><td>群聊 Token 消耗排行</td><td><span class="tag tag-mvp">MVP</span></td></tr>
+                        <tr><td>Space 列表</td><td>Bot 所在的 Space 列表</td><td><span class="tag tag-mvp">MVP</span></td></tr>
+                        <tr><td>工作日志</td><td>Bot 工作轨迹（不含对话内容）</td><td><span class="tag tag-p1">P1</span></td></tr>
+                        <tr><td>时间筛选</td><td>今天 / 近7天 / 近30天</td><td><span class="tag tag-mvp">MVP</span></td></tr>
+                    </tbody>
+                </table>
+            </section>
+            
+            <!-- Section: Dashboard -->
+            <section id="dashboard" class="section">
+                <h1>看板主页</h1>
+                <p>Owner 查看 Bot 的全局使用统计，包含跨 Space 的数据汇总。</p>
+                
+                <h3>入口</h3>
+                <p><strong>左侧导航栏独立 Tab</strong>，与「消息」「通讯录」平级。</p>
+                <ul>
+                    <li>💬 消息（会话列表）</li>
+                    <li>👥 通讯录（联系人）</li>
+                    <li>📊 <strong>AI 看板</strong>（本功能）</li>
+                </ul>
+                <p style="margin-top: 12px; color: #666; font-size: 13px;">没有其他入口，不从 Bot 名片或列表进入。</p>
+                
+                <h3>线框图</h3>
+                <div class="dashboard">
+                    <!-- Header -->
+                    <div class="dash-header">
+                        <div class="dash-title">
+                            <div class="dash-avatar">🐙</div>
+                            <div>
+                                <div class="dash-name">我的工作助手</div>
+                                <div class="dash-status">在线 · 插件版本 v1.2.3</div>
+                            </div>
+                        </div>
+                        <div class="dash-actions">
+                            <select class="select">
+                                <option>近7天</option>
+                                <option>今天</option>
+                                <option>近30天</option>
+                            </select>
+                            <button class="dash-btn dash-btn-primary">工作日志</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Stats Row -->
+                    <div class="stats-row">
+                        <div class="stat-box">
+                            <div class="stat-value">45.3k</div>
+                            <div class="stat-label">Token 消耗</div>
+                            <div class="stat-change stat-up">↑ 23%</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value">15</div>
+                            <div class="stat-label">用户数</div>
+                            <div class="stat-change stat-up">↑ 2</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value">8</div>
+                            <div class="stat-label">群聊数</div>
+                            <div class="stat-change stat-up">↑ 1</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value">2.3s</div>
+                            <div class="stat-label">平均响应时间</div>
+                            <div class="stat-change stat-down">↓ 0.5s</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value">3</div>
+                            <div class="stat-label">所在 Space</div>
+                            <div class="stat-change stat-up">↑ 1</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Grid Row -->
+                    <div class="dash-grid">
+                        <!-- Users -->
+                        <div class="dash-card">
+                            <div class="dash-card-header">
+                                <span>👤 用户使用情况</span>
+                                <span class="dash-card-link">全部 →</span>
+                            </div>
+                            <div class="simple-row">
+                                <div>
+                                    <div>张三</div>
+                                    <div class="simple-row-sub">明略科技</div>
+                                </div>
+                                <span>8.2k</span>
+                            </div>
+                            <div class="simple-row">
+                                <div>
+                                    <div>李四</div>
+                                    <div class="simple-row-sub">明略科技</div>
+                                </div>
+                                <span>5.1k</span>
+                            </div>
+                            <div class="simple-row">
+                                <div>
+                                    <div>王五</div>
+                                    <div class="simple-row-sub">红杉资本</div>
+                                </div>
+                                <span>3.8k</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Groups -->
+                        <div class="dash-card">
+                            <div class="dash-card-header">
+                                <span>💬 群聊使用情况</span>
+                                <span class="dash-card-link">全部 →</span>
+                            </div>
+                            <div class="simple-row">
+                                <span>产品研发组</span>
+                                <span>18.5k</span>
+                            </div>
+                            <div class="simple-row">
+                                <span>投资人沟通群</span>
+                                <span>2.3k</span>
+                            </div>
+                            <div class="simple-row">
+                                <span>跨部门协作</span>
+                                <span>6.8k</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <h3>模块说明</h3>
+                <table>
+                    <thead>
+                        <tr><th>模块</th><th>说明</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>头部信息</td><td>Bot 名称、头像、在线状态、插件版本</td></tr>
+                        <tr><td>时间筛选</td><td>今天 / 近7天 / 近30天，全局生效</td></tr>
+                        <tr><td>核心指标（5个）</td><td>Token 消耗、用户数、群聊数、平均响应时间、所在 Space 数</td></tr>
+                        <tr><td>变化趋势</td><td>每个指标显示与上一周期对比的变化（↑/↓）</td></tr>
+                        <tr><td>用户使用情况</td><td>私聊 Token 消耗 Top 5，点击「全部」进入完整列表</td></tr>
+                        <tr><td>群聊使用情况</td><td>群聊 Token 消耗 Top 5，点击「全部」进入完整列表</td></tr>
+                        <tr><td>工作日志按钮</td><td>点击打开右侧面板，查看 Bot 工作轨迹</td></tr>
+                    </tbody>
+                </table>
+                
+                <h3>交互说明</h3>
+                <ul>
+                    <li>点击「所在 Space」数字 → 进入 Space 列表</li>
+                    <li>点击用户名 → 展开用户名片</li>
+                    <li>点击群聊名 → 展开群聊名片</li>
+                    <li>点击「全部 →」→ 进入完整列表页</li>
+                </ul>
+            </section>
+            
+            <!-- Section: User List -->
+            <section id="user-list" class="section">
+                <h1>用户列表</h1>
+                <p>点击「全部 →」查看所有私聊用户，按 Token 消耗或最近活跃排序。</p>
+                
+                <h3>列表信息</h3>
+                <ul>
+                    <li>用户头像、名称</li>
+                    <li>所属 Space</li>
+                    <li>Token 消耗（私聊）</li>
+                    <li>最近活跃时间</li>
+                </ul>
+                
+                <h3>线框图</h3>
+                <div class="list-card">
+                    <div class="list-header">
+                        <span>用户使用情况</span>
+                        <select class="select" style="font-size: 12px;">
+                            <option>按 Token 消耗排序</option>
+                            <option>按最新活跃排序</option>
+                        </select>
+                    </div>
+                    <div class="list-item">
+                        <div class="list-avatar" style="background: #ddd; color: #666;">张</div>
+                        <div class="list-content">
+                            <div class="list-name">张三</div>
+                            <div class="list-desc">明略科技 · 最近活跃：今天</div>
+                        </div>
+                        <span style="font-weight: 600;">8.2k</span>
+                    </div>
+                    <div class="list-item">
+                        <div class="list-avatar" style="background: #ddd; color: #666;">李</div>
+                        <div class="list-content">
+                            <div class="list-name">李四</div>
+                            <div class="list-desc">明略科技 · 最近活跃：今天</div>
+                        </div>
+                        <span style="font-weight: 600;">5.1k</span>
+                    </div>
+                    <div class="list-item">
+                        <div class="list-avatar" style="background: #ddd; color: #666;">王</div>
+                        <div class="list-content">
+                            <div class="list-name">王五</div>
+                            <div class="list-desc">红杉资本 · 最近活跃：昨天</div>
+                        </div>
+                        <span style="font-weight: 600;">3.8k</span>
+                    </div>
+                </div>
+                
+                <h3>用户名片（点击展开）</h3>
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-avatar" style="background: #ddd; color: #666;">张</div>
+                        <div class="card-info">
+                            <div class="card-name">张三</div>
+                            <div class="card-sub">明略科技 · 产品经理</div>
+                        </div>
+                    </div>
+                    <div class="simple-row"><span style="color: #888;">Token 消耗</span><span style="font-weight: 600;">8.2k</span></div>
+                    <div class="simple-row"><span style="color: #888;">最近活跃</span><span>今天 14:32</span></div>
+                    <div style="margin-top: 12px; padding: 10px; background: #f8f9fa; border-radius: 6px; font-size: 12px; color: #666;">
+                        🔒 隐私保护：仅显示统计信息，不可查看对话内容
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Section: Group List -->
+            <section id="group-list" class="section">
+                <h1>群聊列表</h1>
+                <p>点击「全部 →」查看所有群聊，按 Token 消耗或最近活跃排序。</p>
+                
+                <h3>列表信息</h3>
+                <ul>
+                    <li>群头像、名称</li>
+                    <li>所属 Space</li>
+                    <li>Token 消耗</li>
+                    <li>最近活跃时间</li>
+                </ul>
+                
+                <h3>线框图</h3>
+                <div class="list-card">
+                    <div class="list-header">
+                        <span>群聊使用情况</span>
+                        <select class="select" style="font-size: 12px;">
+                            <option>按 Token 消耗排序</option>
+                            <option>按最新活跃排序</option>
+                        </select>
+                    </div>
+                    <div class="list-item">
+                        <div class="list-avatar" style="background: #E0E7FF; color: #4338CA;">产</div>
+                        <div class="list-content">
+                            <div class="list-name">产品研发组</div>
+                            <div class="list-desc">明略科技 · 最近活跃：今天</div>
+                        </div>
+                        <span style="font-weight: 600;">18.5k</span>
+                    </div>
+                    <div class="list-item">
+                        <div class="list-avatar" style="background: #D1FAE5; color: #059669;">跨</div>
+                        <div class="list-content">
+                            <div class="list-name">跨部门协作</div>
+                            <div class="list-desc">跨组织协作组 · 最近活跃：3天前</div>
+                        </div>
+                        <span style="font-weight: 600;">6.8k</span>
+                    </div>
+                    <div class="list-item">
+                        <div class="list-avatar" style="background: #FEF3C7; color: #92400E;">投</div>
+                        <div class="list-content">
+                            <div class="list-name">投资人沟通群</div>
+                            <div class="list-desc">红杉资本 · 最近活跃：昨天</div>
+                        </div>
+                        <span style="font-weight: 600;">2.3k</span>
+                    </div>
+                </div>
+                
+                <h3>群名片（点击展开）</h3>
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-avatar" style="background: #E0E7FF; color: #4338CA;">产</div>
+                        <div class="card-info">
+                            <div class="card-name">产品研发组</div>
+                            <div class="card-sub">明略科技 · 32 位成员</div>
+                        </div>
+                    </div>
+                    <div class="simple-row"><span style="color: #888;">Token 消耗</span><span style="font-weight: 600;">18.5k</span></div>
+                    <div class="simple-row"><span style="color: #888;">最近活跃</span><span>今天 16:05</span></div>
+                    <div style="margin-top: 12px; padding: 10px; background: #f8f9fa; border-radius: 6px; font-size: 12px; color: #666;">
+                        🔒 隐私保护：仅显示统计信息，不可查看对话内容
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Section: Space List -->
+            <section id="space-list" class="section">
+                <h1>Space 列表</h1>
+                <p>点击看板第一排「所在 Space」数字进入此页面，查看 Bot 加入的所有 Space。</p>
+                
+                <h3>线框图</h3>
+                <div class="list-card">
+                    <div class="list-header">
+                        <span>所在 Space（3）</span>
+                    </div>
+                    <div class="list-item">
+                        <div class="list-avatar" style="background: #E0E7FF; color: #4338CA;">明</div>
+                        <div class="list-content">
+                            <div class="list-name">明略科技</div>
+                            <div class="list-desc">5 个群聊 · 8 位用户</div>
+                        </div>
+                    </div>
+                    <div class="list-item">
+                        <div class="list-avatar" style="background: #FEE2E2; color: #DC2626;">红</div>
+                        <div class="list-content">
+                            <div class="list-name">红杉资本</div>
+                            <div class="list-desc">2 个群聊 · 4 位用户</div>
+                        </div>
+                    </div>
+                    <div class="list-item">
+                        <div class="list-avatar" style="background: #D1FAE5; color: #059669;">跨</div>
+                        <div class="list-content">
+                            <div class="list-name">跨组织协作组</div>
+                            <div class="list-desc">1 个群聊 · 3 位用户</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Section: Work Log -->
+            <section id="work-log" class="section">
+                <h1>工作日志</h1>
+                <p>点击看板右上角「工作日志」按钮，从右侧滑出面板，查看 Bot 工作轨迹。</p>
+                
+                <h3>日志类型</h3>
+                <table>
+                    <thead>
+                        <tr><th>类型</th><th>图标</th><th>内容</th><th>示例</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>活动</td><td>🟢</td><td>开始/完成响应</td><td>14:32 开始响应</td></tr>
+                        <tr><td>工具</td><td>🔧</td><td>调用了什么工具</td><td>14:33 调用「日历查询」</td></tr>
+                        <tr><td>错误</td><td>🔴</td><td>错误类型</td><td>14:35 API 超时，已重试</td></tr>
+                        <tr><td>消息</td><td>💬</td><td>发给谁/哪个群</td><td>14:36 发送给「产品研发群」</td></tr>
+                    </tbody>
+                </table>
+                
+                <h3>线框图</h3>
+                <div style="background: white; border: 1px solid #e0e0e0; border-radius: 8px; max-width: 360px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                    <div style="padding: 16px 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
+                        <div style="font-weight: 600; font-size: 15px;">工作日志</div>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <select style="padding: 4px 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
+                                <option>今天</option>
+                                <option>近7天</option>
+                            </select>
+                            <span style="color: #888; cursor: pointer;">✕</span>
+                        </div>
+                    </div>
+                    <div style="padding: 16px 20px; max-height: 350px; overflow-y: auto;">
+                        <div style="font-size: 11px; color: #888; margin-bottom: 12px;">今天 14:30 - 14:45</div>
+                        <div style="display: flex; gap: 12px; margin-bottom: 14px; font-size: 13px;">
+                            <div style="width: 50px; color: #888;">14:45</div>
+                            <div style="width: 20px;">💬</div>
+                            <div style="flex: 1;">发送给 <span style="color: #4F46E5;">产品研发群</span></div>
+                        </div>
+                        <div style="display: flex; gap: 12px; margin-bottom: 14px; font-size: 13px;">
+                            <div style="width: 50px; color: #888;">14:42</div>
+                            <div style="width: 20px;">🔧</div>
+                            <div style="flex: 1;">调用 <span style="color: #4F46E5;">日历查询</span></div>
+                        </div>
+                        <div style="display: flex; gap: 12px; margin-bottom: 14px; font-size: 13px;">
+                            <div style="width: 50px; color: #888;">14:40</div>
+                            <div style="width: 20px;">🔴</div>
+                            <div style="flex: 1; color: #dc2626;">API 超时，已重试</div>
+                        </div>
+                        <div style="display: flex; gap: 12px; margin-bottom: 14px; font-size: 13px;">
+                            <div style="width: 50px; color: #888;">14:38</div>
+                            <div style="width: 20px;">🔧</div>
+                            <div style="flex: 1;">调用 <span style="color: #4F46E5;">网页搜索</span></div>
+                        </div>
+                        <div style="display: flex; gap: 12px; margin-bottom: 14px; font-size: 13px;">
+                            <div style="width: 50px; color: #888;">14:32</div>
+                            <div style="width: 20px;">🟢</div>
+                            <div style="flex: 1;">开始响应</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <h3>交互说明</h3>
+                <ul>
+                    <li>点击「工作日志」按钮 → 从右侧滑出面板</li>
+                    <li>按时间倒序排列，最新的在上面</li>
+                    <li>相近时间的日志分组显示</li>
+                    <li>点击用户/群名 → 跳转到对应名片</li>
+                    <li>时间筛选：今天 / 近7天</li>
+                </ul>
+                
+                <h3>隐私边界</h3>
+                <ul>
+                    <li>只显示「发给谁」，<strong>不显示发送内容</strong></li>
+                    <li>只显示「调用了什么工具」，<strong>不显示工具参数</strong></li>
+                    <li>Owner 能看到工作轨迹，看不到具体聊了什么</li>
+                </ul>
+            </section>
+            
+            <!-- Section: Terms -->
+            <section id="terms" class="section">
+                <h1>术语定义</h1>
+                
+                <table>
+                    <thead>
+                        <tr><th>术语</th><th>定义</th><th>单位</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><strong>Token 消耗</strong></td><td>Bot 处理消息消耗的 Token 数量（含输入 + 输出）</td><td>k (千 Token)</td></tr>
+                        <tr><td><strong>用户数</strong></td><td>与 Bot 有过私聊互动的好友数量</td><td>人</td></tr>
+                        <tr><td><strong>群聊数</strong></td><td>Bot 所在的群聊数量</td><td>个</td></tr>
+                        <tr><td><strong>平均响应时间</strong></td><td>从用户发送消息到 Bot 开始响应的平均时间</td><td>秒 (s)</td></tr>
+                        <tr><td><strong>Space</strong></td><td>组织/企业空间，Bot 可以加入多个 Space</td><td>个</td></tr>
+                        <tr><td><strong>最近活跃</strong></td><td>Bot 在该用户/群聊中最后一次发消息的时间</td><td>—</td></tr>
+                        <tr><td><strong>工作日志</strong></td><td>Bot 的工作轨迹记录，不含对话内容</td><td>—</td></tr>
+                    </tbody>
+                </table>
+            </section>
+            
+            <!-- Section: Privacy -->
+            <section id="privacy" class="section">
+                <h1>隐私边界</h1>
+                
+                <div class="privacy-grid">
+                    <div class="privacy-box privacy-can">
+                        <div class="privacy-title">✓ Owner 可以看</div>
+                        <ul class="privacy-list">
+                            <li>Bot 状态、版本信息</li>
+                            <li>Token 消耗统计</li>
+                            <li>用户/群聊列表</li>
+                            <li>各用户/群聊的 Token 消耗</li>
+                            <li>最近活跃时间</li>
+                            <li>所在 Space 列表</li>
+                            <li>工作轨迹（调用了什么工具、发给谁）</li>
+                        </ul>
+                    </div>
+                    <div class="privacy-box privacy-cannot">
+                        <div class="privacy-title">✗ Owner 不能看</div>
+                        <ul class="privacy-list">
+                            <li>他人与 Bot 的对话内容</li>
+                            <li>用户的个人敏感信息</li>
+                            <li>对话详情/聊天记录</li>
+                            <li>工具调用的具体参数</li>
+                            <li>消息的具体内容</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <p style="margin-top: 16px;"><strong>核心原则：管理权 ≠ 偷窥权。</strong>Owner 只能看统计数据和工作轨迹，不能看对话内容。</p>
+            </section>
+            
+            <!-- Section: Edge Cases -->
+            <section id="edge-cases" class="section">
+                <h1>边界条件</h1>
+                
+                <table>
+                    <thead>
+                        <tr><th>场景</th><th>处理方式</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Bot 当天没有消息</td><td>显示 0，变化趋势显示「—」</td></tr>
+                        <tr><td>新创建的 Bot</td><td>只有当天数据，无变化趋势</td></tr>
+                        <tr><td>Bot 被删除</td><td>保留历史数据，标记「已删除」</td></tr>
+                        <tr><td>数据延迟</td><td>最多 1 小时，显示「数据更新中」</td></tr>
+                        <tr><td>Bot 切换模型</td><td>Token 累加统计，不区分模型</td></tr>
+                        <tr><td>用户无私聊</td><td>只有群聊数据时，用户列表不显示该用户</td></tr>
+                        <tr><td>群聊被解散</td><td>Bot 自动退出，历史数据保留</td></tr>
+                        <tr><td>Bot 退出 Space</td><td>该 Space 数据归档，不再累加</td></tr>
+                        <tr><td>筛选范围无数据</td><td>显示空状态「暂无数据」</td></tr>
+                    </tbody>
+                </table>
+            </section>
+            
+        </div>
+        
+        <div style="text-align: center; padding: 20px; color: #888; font-size: 12px;">
+            文档版本: v1.0 | 最后更新: 2026-03-24 | 作者: 刘乐君
+        </div>
+    </main>
+    
+    <script>
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', function() {
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+                const sectionId = this.getAttribute('data-section');
+                document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+                document.getElementById(sectionId).classList.add('active');
+                window.scrollTo(0, 0);
+            });
+        });
+    </script>
+</body>
+</html>
