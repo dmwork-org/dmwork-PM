@@ -1,0 +1,2568 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Octo #107 — 拉非好友 AI 进群申请审批</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+/* ============================================================
+   Design Tokens — 与 chat.html 完全一致
+   ============================================================ */
+:root {
+  --brand-from: #7C5CFC;
+  --brand-to: #00D4AA;
+  --brand-gradient: linear-gradient(135deg, var(--brand-from), var(--brand-to));
+  --brand-primary: #7C5CFC;
+  --font-sans: 'Inter', -apple-system, 'PingFang SC', 'Noto Sans SC', sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px;
+  --sp-5: 20px; --sp-6: 24px; --sp-8: 32px; --sp-10: 40px; --sp-12: 48px;
+  --r-xs: 4px; --r-sm: 6px; --r-md: 10px; --r-lg: 14px; --r-xl: 20px; --r-full: 9999px;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur: 200ms; --dur-fast: 150ms; --dur-slow: 350ms;
+}
+
+[data-theme="light"] {
+  --bg-deep: #F0F1F5;
+  --bg-base: #F7F8FA;
+  --bg-surface: #FFFFFF;
+  --bg-elevated: #F0F1F5;
+  --bg-hover: #EAEBF0;
+  --bg-active: #E2E3EA;
+  --bg-self: #E5F5F1;
+  --bg-bubble: #FAFAFF;
+  --text-primary: #1A1C24;
+  --text-secondary: #5C6070;
+  --text-tertiary: #9498A8;
+  --text-accent: #6B4FD8;
+  --text-inverse: #FFFFFF;
+  --border-subtle: rgba(0,0,0,0.05);
+  --border-default: rgba(0,0,0,0.08);
+  --border-strong: rgba(0,0,0,0.14);
+  --ai-panel-bg: #FAFAFF;
+  --ai-border: rgba(124,92,252,0.12);
+  --green: #00B894;
+  --green-bg: rgba(0,184,148,0.08);
+  --amber: #E6930A;
+  --amber-bg: rgba(230,147,10,0.08);
+  --red: #E5405E;
+  --red-bg: rgba(229,64,94,0.08);
+  --blue: #4A85E6;
+  --blue-bg: rgba(74,133,230,0.08);
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+  --shadow-xl: 0 16px 48px rgba(0,0,0,0.16);
+  --btn-primary: #008F76;
+  --btn-ai: #5B3FD1;
+}
+
+[data-theme="dark"] {
+  --bg-deep: #111318;
+  --bg-base: #171921;
+  --bg-surface: #1E212B;
+  --bg-elevated: #262A36;
+  --bg-hover: #2E3240;
+  --bg-active: #363B4A;
+  --bg-self: #1A2E2A;
+  --bg-bubble: #1A1A2E;
+  --text-primary: #E4E6ED;
+  --text-secondary: #9CA1B3;
+  --text-tertiary: #7A7F96;
+  --text-accent: #B0A4FF;
+  --text-inverse: #111318;
+  --border-subtle: rgba(255,255,255,0.04);
+  --border-default: rgba(255,255,255,0.07);
+  --border-strong: rgba(255,255,255,0.12);
+  --ai-panel-bg: #1A1A2E;
+  --ai-border: rgba(124,92,252,0.12);
+  --green: #00D4AA;
+  --green-bg: rgba(0,212,170,0.1);
+  --amber: #FFAD33;
+  --amber-bg: rgba(255,173,51,0.1);
+  --red: #FF5C72;
+  --red-bg: rgba(255,92,114,0.1);
+  --blue: #5C9AFF;
+  --blue-bg: rgba(92,154,255,0.1);
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.5);
+  --shadow-xl: 0 16px 48px rgba(0,0,0,0.6);
+  --btn-primary: #00D4AA;
+  --btn-ai: #7C5CFC;
+}
+
+/* ============================================================
+   Base
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font: 400 14px/1.5 var(--font-sans);
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+}
+::selection { background: rgba(124,92,252,0.3); }
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 2px; }
+
+/* ============================================================
+   Page Layout — 原型展示框架
+   ============================================================ */
+.proto-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 24px 80px;
+}
+
+.proto-header {
+  text-align: center;
+  margin-bottom: 48px;
+}
+.proto-header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  background: var(--brand-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 8px;
+}
+.proto-header p {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+.proto-header .issue-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: var(--r-full);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-top: 12px;
+}
+.proto-header .issue-tag .dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+}
+
+/* 平台切换 */
+.platform-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  margin-bottom: 40px;
+  background: var(--bg-surface);
+  border-radius: var(--r-full);
+  padding: 4px;
+  width: fit-content;
+  margin-left: auto;
+  margin-right: auto;
+  border: 1px solid var(--border-default);
+}
+.platform-tab {
+  padding: 8px 24px;
+  border-radius: var(--r-full);
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font: 500 13px var(--font-sans);
+  cursor: pointer;
+  transition: all var(--dur) var(--ease);
+}
+.platform-tab:hover { color: var(--text-primary); }
+.platform-tab.active {
+  background: var(--brand-primary);
+  color: white;
+}
+
+/* Section */
+.proto-section {
+  margin-bottom: 56px;
+}
+.section-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.step-num {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--brand-gradient);
+  color: white;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.section-label h2 {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.section-label .badge-role {
+  padding: 2px 8px;
+  border-radius: var(--r-full);
+  font-size: 11px;
+  font-weight: 600;
+}
+.badge-applicant { background: var(--green-bg); color: var(--green); }
+.badge-owner { background: rgba(124,92,252,0.08); color: var(--text-accent); }
+.section-desc {
+  color: var(--text-secondary);
+  font-size: 13px;
+  margin-bottom: 16px;
+  padding-left: 38px;
+}
+
+/* 卡片容器 */
+.screen-row {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+.screen-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+}
+.screen-card.web { width: 680px; }
+.screen-card.mobile { width: 375px; }
+
+.screen-title {
+  padding: 10px 16px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-base);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.screen-title svg {
+  width: 12px; height: 12px;
+  stroke: currentColor; stroke-width: 2;
+  fill: none; stroke-linecap: round; stroke-linejoin: round;
+}
+
+/* ============================================================
+   Web 组件
+   ============================================================ */
+
+/* — Modal Overlay — */
+.modal-overlay {
+  background: rgba(0,0,0,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  min-height: 400px;
+  position: relative;
+}
+
+.modal {
+  background: var(--bg-surface);
+  border-radius: var(--r-lg);
+  width: 480px;
+  max-width: 100%;
+  box-shadow: var(--shadow-xl);
+  overflow: hidden;
+  position: relative;
+}
+
+.modal-head {
+  padding: 20px 24px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.modal-head h3 {
+  font-size: 16px;
+  font-weight: 600;
+}
+.modal-close {
+  width: 28px; height: 28px;
+  border-radius: var(--r-sm);
+  border: none;
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--dur);
+}
+.modal-close:hover { background: var(--bg-hover); color: var(--text-primary); }
+.modal-close svg {
+  width: 16px; height: 16px;
+  stroke: currentColor; stroke-width: 2;
+  fill: none; stroke-linecap: round;
+}
+
+/* — 选人列表 (Web Modal) — */
+.member-picker { padding: 16px 24px 24px; }
+
+.picker-search {
+  width: 100%;
+  height: 36px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--border-default);
+  background: var(--bg-elevated);
+  padding: 0 12px 0 36px;
+  font: 400 13px var(--font-sans);
+  color: var(--text-primary);
+  outline: none;
+  transition: all var(--dur);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%239498A8' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: 12px center;
+}
+.picker-search::placeholder { color: var(--text-tertiary); }
+.picker-search:focus {
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 0 3px rgba(124,92,252,0.08);
+}
+
+.picker-tabs {
+  display: flex;
+  gap: 2px;
+  margin: 12px 0;
+}
+.picker-tab {
+  padding: 4px 12px;
+  border-radius: var(--r-full);
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font: 500 12px var(--font-sans);
+  cursor: pointer;
+  transition: all var(--dur);
+}
+.picker-tab:hover { background: var(--bg-hover); }
+.picker-tab.active {
+  background: rgba(124,92,252,0.08);
+  color: var(--text-accent);
+}
+
+.picker-list {
+  max-height: 320px;
+  overflow-y: auto;
+  margin: 0 -24px;
+  padding: 0 24px;
+}
+.picker-group-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 12px 0 6px;
+}
+
+.picker-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px;
+  border-radius: var(--r-md);
+  cursor: pointer;
+  transition: background var(--dur);
+  position: relative;
+}
+.picker-item:hover { background: var(--bg-hover); }
+.picker-item.disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+.picker-item.selected {
+  background: rgba(0,143,118,0.06);
+}
+
+/* 头像 */
+.ava {
+  width: 36px; height: 36px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+  position: relative;
+}
+.ava.human { border-radius: 50%; }
+.ava.ai { border-radius: var(--r-sm); }
+.ava.group { border-radius: var(--r-md); }
+.ava-sm { width: 28px; height: 28px; font-size: 11px; }
+.ava-lg { width: 48px; height: 48px; font-size: 18px; }
+.ava-xl { width: 56px; height: 56px; font-size: 20px; }
+
+.ava .ai-badge {
+  position: absolute;
+  bottom: -2px; right: -2px;
+  width: 14px; height: 14px;
+  border-radius: 4px;
+  background: var(--brand-gradient);
+  border: 2px solid var(--bg-surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ava .ai-badge svg {
+  width: 7px; height: 7px;
+  stroke: white; stroke-width: 2.5;
+  fill: none;
+}
+
+.ava .online-dot {
+  position: absolute;
+  bottom: -1px; right: -1px;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--green);
+  border: 2px solid var(--bg-surface);
+}
+
+.picker-item-info { flex: 1; min-width: 0; }
+.picker-item-name {
+  font-weight: 500;
+  font-size: 13.5px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.picker-item-meta {
+  font-size: 11.5px;
+  color: var(--text-tertiary);
+  margin-top: 1px;
+}
+
+.tag-ai {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: var(--brand-gradient);
+  color: white;
+  letter-spacing: 0.5px;
+}
+.tag-in-group {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: var(--r-full);
+  background: var(--bg-elevated);
+  color: var(--text-tertiary);
+  font-weight: 500;
+}
+.tag-owner {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: var(--r-full);
+  background: rgba(124,92,252,0.08);
+  color: var(--text-accent);
+  font-weight: 500;
+}
+.tag-pending {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: var(--r-full);
+  background: var(--amber-bg);
+  color: var(--amber);
+  font-weight: 500;
+}
+
+/* checkbox */
+.picker-check {
+  width: 18px; height: 18px;
+  border-radius: 4px;
+  border: 2px solid var(--border-strong);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--dur);
+}
+.picker-item.selected .picker-check {
+  background: var(--btn-primary);
+  border-color: var(--btn-primary);
+}
+.picker-item.selected .picker-check::after {
+  content: '';
+  width: 8px; height: 5px;
+  border-left: 2px solid white;
+  border-bottom: 2px solid white;
+  transform: rotate(-45deg) translateY(-1px);
+}
+
+/* Selected bar */
+.picker-selected-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 0 0;
+  border-top: 1px solid var(--border-subtle);
+  margin-top: 12px;
+}
+.selected-avatars {
+  display: flex;
+  gap: -4px;
+  flex: 1;
+}
+.selected-count {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.btn {
+  padding: 8px 20px;
+  border-radius: var(--r-md);
+  border: none;
+  font: 500 13px var(--font-sans);
+  cursor: pointer;
+  transition: all var(--dur) var(--ease);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.btn svg {
+  width: 14px; height: 14px;
+  stroke: currentColor; stroke-width: 2;
+  fill: none; stroke-linecap: round; stroke-linejoin: round;
+}
+.btn-primary {
+  background: var(--btn-primary);
+  color: white;
+}
+.btn-primary:hover { filter: brightness(1.1); transform: translateY(-1px); box-shadow: var(--shadow-md); }
+.btn-ai-action {
+  background: var(--btn-ai);
+  color: white;
+}
+.btn-ai-action:hover { filter: brightness(1.1); transform: translateY(-1px); }
+.btn-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-default);
+}
+.btn-ghost:hover { background: var(--bg-hover); color: var(--text-primary); }
+.btn-danger {
+  background: transparent;
+  color: var(--red);
+  border: 1px solid rgba(229,64,94,0.2);
+}
+.btn-danger:hover { background: var(--red-bg); }
+.btn-disabled {
+  background: var(--bg-elevated);
+  color: var(--text-tertiary);
+  cursor: not-allowed;
+  pointer-events: none;
+}
+.btn-sm-size { padding: 6px 14px; font-size: 12px; }
+.btn-lg { padding: 10px 28px; font-size: 14px; }
+
+/* — 申请面板 — */
+.apply-panel {
+  padding: 24px;
+}
+.apply-target {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: var(--ai-panel-bg);
+  border: 1px solid var(--ai-border);
+  border-radius: var(--r-md);
+  margin-bottom: 20px;
+  position: relative;
+}
+.apply-target::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  border-radius: var(--r-md) var(--r-md) 0 0;
+  background: var(--brand-gradient);
+  opacity: 0.5;
+}
+.apply-target-info { flex: 1; }
+.apply-target-name {
+  font-size: 15px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.apply-target-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+.apply-target-owner {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin-top: 6px;
+}
+.apply-target-owner .ava { width: 18px; height: 18px; font-size: 8px; }
+
+.apply-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 0;
+  color: var(--text-tertiary);
+}
+.apply-arrow svg {
+  width: 20px; height: 20px;
+  stroke: currentColor; stroke-width: 1.6;
+  fill: none; stroke-linecap: round; stroke-linejoin: round;
+}
+
+.apply-group-target {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--bg-elevated);
+  border-radius: var(--r-md);
+  margin-bottom: 20px;
+}
+.apply-group-name {
+  font-size: 14px;
+  font-weight: 500;
+}
+.apply-group-meta {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  margin-top: 1px;
+}
+
+.apply-field { margin-bottom: 16px; }
+.apply-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+.apply-label .optional {
+  font-weight: 400;
+  color: var(--text-tertiary);
+  margin-left: 4px;
+}
+.apply-textarea {
+  width: 100%;
+  min-height: 80px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--border-default);
+  background: var(--bg-elevated);
+  padding: 10px 12px;
+  font: 400 13px/1.5 var(--font-sans);
+  color: var(--text-primary);
+  resize: vertical;
+  outline: none;
+  transition: all var(--dur);
+}
+.apply-textarea::placeholder { color: var(--text-tertiary); }
+.apply-textarea:focus {
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 0 3px rgba(124,92,252,0.08);
+  background: var(--bg-surface);
+}
+
+.apply-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--blue-bg);
+  border-radius: var(--r-sm);
+  margin-bottom: 20px;
+}
+.apply-notice svg {
+  width: 14px; height: 14px;
+  stroke: var(--blue); stroke-width: 2;
+  fill: none; flex-shrink: 0;
+  margin-top: 1px;
+}
+.apply-notice p {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.apply-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* — 成功状态 — */
+.success-state {
+  padding: 48px 24px;
+  text-align: center;
+}
+.success-icon {
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  background: var(--green-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+}
+.success-icon svg {
+  width: 24px; height: 24px;
+  stroke: var(--green); stroke-width: 2.5;
+  fill: none; stroke-linecap: round; stroke-linejoin: round;
+}
+.success-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.success-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  max-width: 320px;
+  margin: 0 auto 24px;
+}
+
+/* — BotFather 审批卡片 (Chat Message) — */
+.chat-preview {
+  background: var(--bg-surface);
+  padding: 24px;
+}
+
+.msg-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+.msg-sender {
+  font-weight: 600;
+  font-size: 13px;
+  margin-bottom: 2px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.msg-ts {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  font-weight: 400;
+}
+.msg-content { flex: 1; min-width: 0; }
+
+/* 审批卡片 */
+.approval-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  max-width: 420px;
+  box-shadow: var(--shadow-sm);
+}
+.approval-card-head {
+  padding: 12px 16px;
+  background: var(--ai-panel-bg);
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+}
+.approval-card-head::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--brand-gradient);
+  opacity: 0.5;
+}
+.approval-card-head .card-icon {
+  width: 24px; height: 24px;
+  border-radius: var(--r-sm);
+  background: var(--brand-gradient);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.approval-card-head .card-icon svg {
+  width: 12px; height: 12px;
+  stroke: white; stroke-width: 2;
+  fill: none;
+}
+.approval-card-head span {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.approval-card-body { padding: 16px; }
+
+.approval-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.approval-row:last-child { margin-bottom: 0; }
+
+.approval-label {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  width: 56px;
+  flex-shrink: 0;
+}
+.approval-value {
+  font-size: 13px;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.approval-reason {
+  padding: 10px 12px;
+  background: var(--bg-elevated);
+  border-radius: var(--r-sm);
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 12px 0;
+  line-height: 1.5;
+}
+
+.approval-applicants {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0 12px;
+}
+.applicant-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px 4px 4px;
+  border-radius: var(--r-full);
+  background: var(--bg-elevated);
+  font-size: 12px;
+  font-weight: 500;
+}
+.applicant-chip .ava { width: 20px; height: 20px; font-size: 9px; }
+
+.approval-card-foot {
+  padding: 12px 16px;
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  gap: 8px;
+}
+.approval-card-foot .btn { flex: 1; }
+
+/* 已审批状态 */
+.approval-result {
+  padding: 12px 16px;
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.approval-result.approved { background: var(--green-bg); }
+.approval-result.rejected { background: var(--red-bg); }
+.result-icon {
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.result-icon svg {
+  width: 12px; height: 12px;
+  stroke-width: 2.5;
+  fill: none; stroke-linecap: round; stroke-linejoin: round;
+}
+.result-icon.ok { background: var(--green); }
+.result-icon.ok svg { stroke: white; }
+.result-icon.no { background: var(--red); }
+.result-icon.no svg { stroke: white; }
+.approval-result span {
+  font-size: 13px;
+  font-weight: 500;
+}
+.approval-result .result-time {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  font-weight: 400;
+  margin-left: auto;
+}
+
+/* — 通知消息 (系统通知 bubble) — */
+.notify-bubble {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: 2px var(--r-lg) var(--r-lg) var(--r-lg);
+  font-size: 13px;
+  max-width: 400px;
+  line-height: 1.5;
+}
+.notify-bubble.success { border-left: 3px solid var(--green); }
+.notify-bubble.error { border-left: 3px solid var(--red); }
+.notify-bubble.warning { border-left: 3px solid var(--amber); }
+
+/* ============================================================
+   Mobile 组件
+   ============================================================ */
+.mobile-frame {
+  width: 375px;
+  background: var(--bg-deep);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  position: relative;
+}
+/* Status bar */
+.mobile-status-bar {
+  height: 44px;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 14px;
+  font-weight: 600;
+  background: var(--bg-surface);
+}
+.mobile-status-bar .time { font-variant-numeric: tabular-nums; }
+.mobile-status-icons {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.mobile-status-icons svg {
+  width: 16px; height: 16px;
+  fill: var(--text-primary);
+}
+
+/* Nav bar */
+.mobile-nav {
+  height: 48px;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.mobile-nav .back-btn {
+  width: 36px; height: 36px;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.mobile-nav .back-btn svg {
+  width: 20px; height: 20px;
+  stroke: currentColor; stroke-width: 2;
+  fill: none; stroke-linecap: round; stroke-linejoin: round;
+}
+.mobile-nav .nav-title {
+  flex: 1;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 600;
+}
+.mobile-nav .nav-action {
+  padding: 6px 14px;
+  border: none;
+  border-radius: var(--r-sm);
+  background: var(--btn-primary);
+  color: white;
+  font: 500 13px var(--font-sans);
+  cursor: pointer;
+}
+.mobile-nav .nav-action.disabled {
+  background: var(--bg-elevated);
+  color: var(--text-tertiary);
+}
+.mobile-nav .nav-placeholder { width: 36px; }
+
+/* Mobile 列表 */
+.mobile-list {
+  background: var(--bg-surface);
+  max-height: 400px;
+  overflow-y: auto;
+}
+.mobile-search-bar {
+  padding: 8px 16px;
+  background: var(--bg-surface);
+}
+.mobile-search-input {
+  width: 100%;
+  height: 34px;
+  border-radius: var(--r-md);
+  border: none;
+  background: var(--bg-elevated);
+  padding: 0 12px 0 34px;
+  font: 400 13px var(--font-sans);
+  color: var(--text-primary);
+  outline: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%239498A8' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: 12px center;
+}
+.mobile-search-input::placeholder { color: var(--text-tertiary); }
+
+.mobile-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  position: relative;
+}
+.mobile-item.disabled { opacity: 0.4; }
+.mobile-item.selected { background: rgba(0,143,118,0.04); }
+
+.mobile-item-info { flex: 1; min-width: 0; }
+.mobile-item-name {
+  font-weight: 500;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.mobile-item-meta {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin-top: 1px;
+}
+
+.mobile-check {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--border-strong);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--dur);
+}
+.mobile-item.selected .mobile-check {
+  background: var(--btn-primary);
+  border-color: var(--btn-primary);
+}
+.mobile-item.selected .mobile-check::after {
+  content: '';
+  width: 9px; height: 5px;
+  border-left: 2px solid white;
+  border-bottom: 2px solid white;
+  transform: rotate(-45deg) translateY(-1px);
+}
+
+/* Mobile Bottom Sheet */
+.mobile-sheet {
+  background: var(--bg-surface);
+  border-radius: var(--r-xl) var(--r-xl) 0 0;
+  overflow: hidden;
+  position: relative;
+}
+.sheet-handle {
+  width: 36px; height: 4px;
+  border-radius: 2px;
+  background: var(--bg-active);
+  margin: 8px auto 0;
+}
+
+.sheet-head {
+  padding: 16px 20px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.sheet-head h3 {
+  font-size: 17px;
+  font-weight: 600;
+}
+.sheet-close {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--bg-elevated);
+  border: none;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.sheet-close svg {
+  width: 14px; height: 14px;
+  stroke: currentColor; stroke-width: 2.5;
+  fill: none; stroke-linecap: round;
+}
+
+.sheet-body {
+  padding: 16px 20px 24px;
+}
+
+/* Mobile 审批卡片 */
+.mobile-approval-card {
+  background: var(--bg-surface);
+  border-radius: var(--r-lg);
+  border: 1px solid var(--border-default);
+  overflow: hidden;
+  margin: 0 16px;
+  box-shadow: var(--shadow-sm);
+}
+.mobile-approval-head {
+  padding: 10px 14px;
+  background: var(--ai-panel-bg);
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+}
+.mobile-approval-head::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--brand-gradient);
+  opacity: 0.5;
+}
+.mobile-approval-body { padding: 14px; }
+.mobile-approval-foot {
+  padding: 10px 14px;
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  gap: 8px;
+}
+.mobile-approval-foot .btn { flex: 1; font-size: 14px; padding: 10px; }
+
+/* Mobile chat bubble */
+.mobile-chat-bg {
+  background: var(--bg-deep);
+  padding: 16px;
+}
+.mobile-bubble {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+.mobile-bubble .ava { width: 32px; height: 32px; font-size: 12px; }
+.mobile-bubble-content { flex: 1; }
+.mobile-bubble-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.mobile-msg-bubble {
+  display: inline-block;
+  padding: 10px 14px;
+  background: var(--bg-bubble);
+  border-radius: 2px var(--r-lg) var(--r-lg) var(--r-lg);
+  font-size: 14px;
+  line-height: 1.6;
+  max-width: 280px;
+  border: 1px solid var(--border-subtle);
+}
+
+/* 分注标注 */
+.anno {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--r-full);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  position: absolute;
+  top: -10px;
+  right: 12px;
+}
+.anno-new { background: var(--green-bg); color: var(--green); }
+.anno-skip { background: var(--amber-bg); color: var(--amber); }
+
+/* ============================================================
+   Flow connector
+   ============================================================ */
+.flow-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 0;
+  color: var(--text-tertiary);
+}
+.flow-arrow svg {
+  width: 24px; height: 24px;
+  stroke: currentColor; stroke-width: 1.5;
+  fill: none; stroke-linecap: round; stroke-linejoin: round;
+}
+
+/* ============================================================
+   Responsive
+   ============================================================ */
+@media (max-width: 768px) {
+  .screen-row { flex-direction: column; }
+  .screen-card.web { width: 100%; }
+  .screen-card.mobile { width: 100%; max-width: 375px; }
+}
+
+/* ============================================================
+   Theme toggle
+   ============================================================ */
+.theme-fab {
+  position: fixed;
+  bottom: 20px; right: 20px;
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  color: var(--text-secondary);
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-md);
+  z-index: 1000;
+  transition: transform 0.2s;
+}
+.theme-fab:hover { transform: scale(1.1); }
+
+/* ============================================================
+   Utilities
+   ============================================================ */
+.mt-1 { margin-top: 4px; }
+.mt-2 { margin-top: 8px; }
+.mt-3 { margin-top: 12px; }
+.mt-4 { margin-top: 16px; }
+.mb-2 { margin-bottom: 8px; }
+.mb-3 { margin-bottom: 12px; }
+.gap-2 { gap: 8px; }
+.flex { display: flex; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.text-center { text-align: center; }
+</style>
+</head>
+<body>
+
+<div class="proto-page">
+
+  <!-- ============================================================
+       HEADER
+       ============================================================ -->
+  <div class="proto-header">
+    <h1>拉非好友 AI 进群 · 申请审批</h1>
+    <p>Issue #107 — 完整交互原型 · Web + 移动端</p>
+    <div class="issue-tag">
+      <span class="dot"></span>
+      P1 · Feature · 全端
+    </div>
+  </div>
+
+  <!-- ============================================================
+       STEP 1: 选人列表 — 申请方
+       ============================================================ -->
+  <div class="proto-section">
+    <div class="section-label">
+      <span class="step-num">1</span>
+      <h2>选择成员 · 拉人进群</h2>
+      <span class="badge-role badge-applicant">申请方</span>
+    </div>
+    <p class="section-desc">用户点击「拉人进群」后，弹出选人界面。AI 已在群中的置灰，不可选。AI 头像用圆角方形+渐变角标区分身份。</p>
+
+    <div class="screen-row">
+      <!-- Web -->
+      <div class="screen-card web">
+        <div class="screen-title">
+          <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          Web
+        </div>
+        <div class="modal-overlay">
+          <div class="modal">
+            <div class="modal-head">
+              <h3>添加群成员</h3>
+              <button class="modal-close"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+            </div>
+            <div class="member-picker">
+              <input class="picker-search" type="text" placeholder="搜索联系人或 AI…">
+              <div class="picker-tabs">
+                <button class="picker-tab active">全部</button>
+                <button class="picker-tab">联系人</button>
+                <button class="picker-tab">AI Bot</button>
+              </div>
+
+              <div class="picker-list">
+                <div class="picker-group-label">我的好友</div>
+
+                <!-- 好友 AI — 可直接选 -->
+                <div class="picker-item selected">
+                  <div class="ava ai" style="background: linear-gradient(135deg, #7C5CFC, #5C9AFF);">T</div>
+                  <div class="picker-item-info">
+                    <div class="picker-item-name">Thomas AI <span class="tag-ai">AI</span></div>
+                    <div class="picker-item-meta">智能代码助手 · Owner: 浩哥</div>
+                  </div>
+                  <div class="picker-check"></div>
+                </div>
+
+                <!-- 人类好友 -->
+                <div class="picker-item">
+                  <div class="ava human" style="background: #0EA5E9;">J
+                    <span class="online-dot"></span>
+                  </div>
+                  <div class="picker-item-info">
+                    <div class="picker-item-name">JoJo</div>
+                    <div class="picker-item-meta">在线</div>
+                  </div>
+                  <div class="picker-check"></div>
+                </div>
+
+                <div class="picker-group-label">组织内 AI</div>
+
+                <!-- 非好友 AI — 可选（选中后触发申请流程） -->
+                <div class="picker-item selected">
+                  <div class="ava ai" style="background: linear-gradient(135deg, #EC4899, #F97316);">R</div>
+                  <div class="picker-item-info">
+                    <div class="picker-item-name">ResearchBot <span class="tag-ai">AI</span></div>
+                    <div class="picker-item-meta">学术论文分析 · Owner: 李教授</div>
+                  </div>
+                  <div class="picker-check"></div>
+                </div>
+
+                <!-- AI 已在群中 — 置灰 -->
+                <div class="picker-item disabled">
+                  <div class="ava ai" style="background: linear-gradient(135deg, #F59E0B, #EF4444);">B</div>
+                  <div class="picker-item-info">
+                    <div class="picker-item-name">BotFather <span class="tag-ai">AI</span> <span class="tag-in-group">已在群中</span></div>
+                    <div class="picker-item-meta">Bot 管理助手</div>
+                  </div>
+                  <div class="picker-check"></div>
+                </div>
+
+                <!-- 审批中 AI — 置灰 -->
+                <div class="picker-item disabled">
+                  <div class="ava ai" style="background: linear-gradient(135deg, #06B6D4, #3B82F6);">D</div>
+                  <div class="picker-item-info">
+                    <div class="picker-item-name">DataMiner <span class="tag-ai">AI</span> <span class="tag-pending">审批中</span></div>
+                    <div class="picker-item-meta">数据分析助手 · Owner: 王工</div>
+                  </div>
+                  <div class="picker-check"></div>
+                </div>
+
+                <!-- 人类 -->
+                <div class="picker-item">
+                  <div class="ava human" style="background: #059669;">浩</div>
+                  <div class="picker-item-info">
+                    <div class="picker-item-name">浩哥</div>
+                    <div class="picker-item-meta">后端开发</div>
+                  </div>
+                  <div class="picker-check"></div>
+                </div>
+              </div>
+
+              <div class="picker-selected-bar">
+                <span class="selected-count">已选 2 人</span>
+                <div style="flex:1"></div>
+                <button class="btn btn-primary">确认邀请</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mobile -->
+      <div class="screen-card mobile">
+        <div class="screen-title">
+          <svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+          Mobile
+        </div>
+        <div class="mobile-frame">
+          <div class="mobile-status-bar">
+            <span class="time">18:41</span>
+            <div class="mobile-status-icons">
+              <svg viewBox="0 0 24 24"><path d="M1 1l22 22M16.72 11.06A10.94 10.94 0 0 1 19 12.55M5 12.55a10.94 10.94 0 0 1 5.17-2.39M10.71 5.05A16 16 0 0 1 22.56 9M1.42 9a15.91 15.91 0 0 1 4.7-2.88M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01"/></svg>
+              <svg viewBox="0 0 24 24"><rect x="1" y="6" width="18" height="12" rx="2"/><line x1="23" y1="13" x2="23" y2="11"/></svg>
+            </div>
+          </div>
+          <div class="mobile-nav">
+            <button class="back-btn"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+            <span class="nav-title">添加群成员</span>
+            <button class="nav-action">确认(2)</button>
+          </div>
+          <div class="mobile-search-bar">
+            <input class="mobile-search-input" type="text" placeholder="搜索联系人或 AI…">
+          </div>
+          <div class="mobile-list">
+            <!-- 我的好友 -->
+            <div class="mobile-item" style="background: var(--bg-base); padding: 6px 16px;">
+              <span style="font-size: 12px; font-weight: 600; color: var(--text-tertiary); letter-spacing: 0.04em;">我的好友</span>
+            </div>
+            <div class="mobile-item selected">
+              <div class="ava ai" style="background: linear-gradient(135deg, #7C5CFC, #5C9AFF); width: 40px; height: 40px;">T</div>
+              <div class="mobile-item-info">
+                <div class="mobile-item-name">Thomas AI <span class="tag-ai">AI</span></div>
+                <div class="mobile-item-meta">智能代码助手</div>
+              </div>
+              <div class="mobile-check"></div>
+            </div>
+            <div class="mobile-item">
+              <div class="ava human" style="background: #0EA5E9; width: 40px; height: 40px;">J
+                <span class="online-dot"></span>
+              </div>
+              <div class="mobile-item-info">
+                <div class="mobile-item-name">JoJo</div>
+                <div class="mobile-item-meta">在线</div>
+              </div>
+              <div class="mobile-check"></div>
+            </div>
+
+            <!-- 组织内 AI -->
+            <div class="mobile-item" style="background: var(--bg-base); padding: 6px 16px;">
+              <span style="font-size: 12px; font-weight: 600; color: var(--text-tertiary); letter-spacing: 0.04em;">组织内 AI</span>
+            </div>
+            <div class="mobile-item selected">
+              <div class="ava ai" style="background: linear-gradient(135deg, #EC4899, #F97316); width: 40px; height: 40px;">R</div>
+              <div class="mobile-item-info">
+                <div class="mobile-item-name">ResearchBot <span class="tag-ai">AI</span></div>
+                <div class="mobile-item-meta">Owner: 李教授</div>
+              </div>
+              <div class="mobile-check"></div>
+            </div>
+
+            <!-- 已在群中 -->
+            <div class="mobile-item disabled">
+              <div class="ava ai" style="background: linear-gradient(135deg, #F59E0B, #EF4444); width: 40px; height: 40px;">B</div>
+              <div class="mobile-item-info">
+                <div class="mobile-item-name">BotFather <span class="tag-ai">AI</span> <span class="tag-in-group">已在群中</span></div>
+                <div class="mobile-item-meta">Bot 管理助手</div>
+              </div>
+              <div class="mobile-check"></div>
+            </div>
+
+            <!-- 审批中 -->
+            <div class="mobile-item disabled">
+              <div class="ava ai" style="background: linear-gradient(135deg, #06B6D4, #3B82F6); width: 40px; height: 40px;">D</div>
+              <div class="mobile-item-info">
+                <div class="mobile-item-name">DataMiner <span class="tag-ai">AI</span> <span class="tag-pending">审批中</span></div>
+                <div class="mobile-item-meta">Owner: 王工</div>
+              </div>
+              <div class="mobile-check"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       STEP 2: 申请页面（非好友 AI 需审批）
+       ============================================================ -->
+  <div class="proto-section">
+    <div class="section-label">
+      <span class="step-num">2</span>
+      <h2>提交申请 · 向 Owner 申请拉入</h2>
+      <span class="badge-role badge-applicant">申请方</span>
+    </div>
+    <p class="section-desc">选中非好友 AI 点击确认后，弹出申请面板。显示 AI 信息 + Owner + 目标群。申请原因为选填。好友 AI 和人类直接拉入，不弹此面板。</p>
+
+    <div class="screen-row">
+      <!-- Web -->
+      <div class="screen-card web">
+        <div class="screen-title">
+          <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          Web
+        </div>
+        <div class="modal-overlay">
+          <div class="modal">
+            <div class="modal-head">
+              <h3>申请将 AI 拉入群聊</h3>
+              <button class="modal-close"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+            </div>
+            <div class="apply-panel">
+              <!-- AI 信息卡 -->
+              <div class="apply-target">
+                <div class="ava ai ava-lg" style="background: linear-gradient(135deg, #EC4899, #F97316);">R</div>
+                <div class="apply-target-info">
+                  <div class="apply-target-name">ResearchBot <span class="tag-ai">AI</span></div>
+                  <div class="apply-target-desc">学术论文分析助手，擅长文献检索与摘要生成</div>
+                  <div class="apply-target-owner">
+                    <div class="ava human" style="background: #8B5CF6;">李</div>
+                    Owner: 李教授
+                  </div>
+                </div>
+              </div>
+
+              <!-- 目标群信息 -->
+              <div class="apply-arrow">
+                <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+              </div>
+
+              <div class="apply-group-target">
+                <div class="ava group" style="background: linear-gradient(135deg, #6366F1, #8B5CF6); width: 36px; height: 36px;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                </div>
+                <div>
+                  <div class="apply-group-name">AI 工作群</div>
+                  <div class="apply-group-meta">4 人 · 2 AI</div>
+                </div>
+              </div>
+
+              <!-- 申请原因 -->
+              <div class="apply-field">
+                <label class="apply-label">申请原因 <span class="optional">(选填)</span></label>
+                <textarea class="apply-textarea" placeholder="请简要说明将该 AI 拉入群聊的原因…">想用 ResearchBot 帮大家做文献调研</textarea>
+              </div>
+
+              <!-- 提示 -->
+              <div class="apply-notice">
+                <svg viewBox="0 0 24 24" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                <p>该 AI 不是你的好友，需要 Owner（李教授）审批后才能加入群聊。审批有效期为 7 天。</p>
+              </div>
+
+              <div class="apply-actions">
+                <button class="btn btn-ghost">取消</button>
+                <button class="btn btn-primary btn-lg">提交申请</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mobile -->
+      <div class="screen-card mobile">
+        <div class="screen-title">
+          <svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+          Mobile
+        </div>
+        <div class="mobile-frame">
+          <div class="mobile-status-bar">
+            <span class="time">18:41</span>
+            <div class="mobile-status-icons">
+              <svg viewBox="0 0 24 24"><path d="M1 1l22 22M16.72 11.06A10.94 10.94 0 0 1 19 12.55M5 12.55a10.94 10.94 0 0 1 5.17-2.39M10.71 5.05A16 16 0 0 1 22.56 9M1.42 9a15.91 15.91 0 0 1 4.7-2.88M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01"/></svg>
+              <svg viewBox="0 0 24 24"><rect x="1" y="6" width="18" height="12" rx="2"/><line x1="23" y1="13" x2="23" y2="11"/></svg>
+            </div>
+          </div>
+          <!-- Bottom sheet style on mobile -->
+          <div style="background: rgba(0,0,0,0.25); padding: 60px 0 0;">
+            <div class="mobile-sheet">
+              <div class="sheet-handle"></div>
+              <div class="sheet-head">
+                <h3>申请拉入群聊</h3>
+                <button class="sheet-close"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+              </div>
+              <div class="sheet-body">
+                <!-- AI 信息 -->
+                <div class="apply-target" style="margin-bottom: 12px;">
+                  <div class="ava ai" style="background: linear-gradient(135deg, #EC4899, #F97316); width: 44px; height: 44px; font-size: 16px;">R</div>
+                  <div class="apply-target-info">
+                    <div class="apply-target-name" style="font-size: 16px;">ResearchBot <span class="tag-ai">AI</span></div>
+                    <div class="apply-target-desc">学术论文分析助手</div>
+                    <div class="apply-target-owner">
+                      <div class="ava human" style="background: #8B5CF6;">李</div>
+                      Owner: 李教授
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 目标群 -->
+                <div class="apply-group-target" style="margin-bottom: 16px;">
+                  <div class="ava group" style="background: linear-gradient(135deg, #6366F1, #8B5CF6); width: 32px; height: 32px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                  </div>
+                  <div>
+                    <div class="apply-group-name" style="font-size: 14px;">拉入: AI 工作群</div>
+                    <div class="apply-group-meta">4 人 · 2 AI</div>
+                  </div>
+                </div>
+
+                <!-- 输入 -->
+                <div class="apply-field" style="margin-bottom: 12px;">
+                  <label class="apply-label">申请原因 <span class="optional">(选填)</span></label>
+                  <textarea class="apply-textarea" placeholder="简要说明原因…" style="min-height: 64px;">想用 ResearchBot 帮大家做文献调研</textarea>
+                </div>
+
+                <!-- 提示 -->
+                <div class="apply-notice" style="margin-bottom: 16px;">
+                  <svg viewBox="0 0 24 24" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                  <p>需要 Owner（李教授）审批，有效期 7 天</p>
+                </div>
+
+                <button class="btn btn-primary btn-lg" style="width: 100%;">提交申请</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       STEP 3: 申请成功 + 免审批
+       ============================================================ -->
+  <div class="proto-section">
+    <div class="section-label">
+      <span class="step-num">3</span>
+      <h2>申请已提交 · 等待审批</h2>
+      <span class="badge-role badge-applicant">申请方</span>
+    </div>
+    <p class="section-desc">提交后显示成功状态。如果 Owner 就是申请人自己，则免审批直接拉入。</p>
+
+    <div class="screen-row">
+      <!-- 成功状态 Web -->
+      <div class="screen-card" style="width: 380px;">
+        <div class="screen-title">
+          <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          Web · 申请已提交
+        </div>
+        <div class="success-state">
+          <div class="success-icon">
+            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <div class="success-title">申请已提交</div>
+          <div class="success-desc">已向 李教授 发送申请通知，对方审批后 ResearchBot 将自动加入群聊。审批有效期 7 天。</div>
+          <button class="btn btn-ghost">知道了</button>
+        </div>
+      </div>
+
+      <!-- 免审批 Web -->
+      <div class="screen-card" style="width: 380px; position: relative;">
+        <span class="anno anno-skip">免审批</span>
+        <div class="screen-title">
+          <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          Web · Owner = 申请人（免审批）
+        </div>
+        <div class="success-state">
+          <div class="success-icon" style="background: var(--green-bg);">
+            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <div class="success-title">已拉入群聊</div>
+          <div class="success-desc">你是 ResearchBot 的 Owner，已直接将其拉入「AI 工作群」。</div>
+          <button class="btn btn-primary">好的</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       STEP 4: Owner 收到审批通知（BotFather 消息卡片）
+       ============================================================ -->
+  <div class="proto-section">
+    <div class="section-label">
+      <span class="step-num">4</span>
+      <h2>Owner 审批 · BotFather 通知卡片</h2>
+      <span class="badge-role badge-owner">Owner</span>
+    </div>
+    <p class="section-desc">BotFather 向 Owner 发送审批卡片。多人申请合并展示，Owner 只需审批一次。</p>
+
+    <div class="screen-row">
+      <!-- Web 单人申请 -->
+      <div class="screen-card web">
+        <div class="screen-title">
+          <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          Web · 单人申请
+        </div>
+        <div class="chat-preview">
+          <div class="msg-row">
+            <div class="ava ai" style="background: linear-gradient(135deg, #F59E0B, #EF4444); width: 32px; height: 32px; font-size: 12px;">B</div>
+            <div class="msg-content">
+              <div class="msg-sender">BotFather <span class="tag-ai" style="font-size: 8px;">AI</span> <span class="msg-ts">18:42</span></div>
+
+              <div class="approval-card">
+                <div class="approval-card-head">
+                  <div class="card-icon">
+                    <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+                  </div>
+                  <span>拉入群聊申请</span>
+                </div>
+                <div class="approval-card-body">
+                  <div class="approval-row">
+                    <span class="approval-label">申请人</span>
+                    <span class="approval-value">
+                      <span class="ava human ava-sm" style="background: #0EA5E9; width: 20px; height: 20px; font-size: 9px;">叶</span>
+                      叶佳
+                    </span>
+                  </div>
+                  <div class="approval-row">
+                    <span class="approval-label">AI Bot</span>
+                    <span class="approval-value">
+                      <span class="ava ai ava-sm" style="background: linear-gradient(135deg, #EC4899, #F97316); width: 20px; height: 20px; font-size: 9px; border-radius: 4px;">R</span>
+                      ResearchBot
+                      <span class="tag-ai" style="font-size: 8px;">AI</span>
+                    </span>
+                  </div>
+                  <div class="approval-row">
+                    <span class="approval-label">目标群</span>
+                    <span class="approval-value">
+                      <span class="ava group ava-sm" style="background: linear-gradient(135deg, #6366F1, #8B5CF6); width: 20px; height: 20px; font-size: 9px; border-radius: 6px;">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                      </span>
+                      AI 工作群
+                    </span>
+                  </div>
+                  <div class="approval-reason">"想用 ResearchBot 帮大家做文献调研"</div>
+                </div>
+                <div class="approval-card-foot">
+                  <button class="btn btn-danger btn-sm-size">拒绝</button>
+                  <button class="btn btn-primary">同意加入</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mobile 单人 -->
+      <div class="screen-card mobile">
+        <div class="screen-title">
+          <svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+          Mobile · 单人申请
+        </div>
+        <div class="mobile-frame">
+          <div class="mobile-status-bar">
+            <span class="time">18:42</span>
+            <div class="mobile-status-icons">
+              <svg viewBox="0 0 24 24"><rect x="1" y="6" width="18" height="12" rx="2"/><line x1="23" y1="13" x2="23" y2="11"/></svg>
+            </div>
+          </div>
+          <div class="mobile-nav">
+            <button class="back-btn"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+            <span class="nav-title">BotFather</span>
+            <span class="nav-placeholder"></span>
+          </div>
+          <div class="mobile-chat-bg">
+            <div class="mobile-bubble">
+              <div class="ava ai" style="background: linear-gradient(135deg, #F59E0B, #EF4444);">B</div>
+              <div class="mobile-bubble-content">
+                <div class="mobile-bubble-name">BotFather <span class="tag-ai" style="font-size: 8px;">AI</span></div>
+                <div class="mobile-approval-card">
+                  <div class="mobile-approval-head">
+                    <div class="card-icon" style="width: 20px; height: 20px; border-radius: 4px;">
+                      <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" style="width: 10px; height: 10px; stroke: white; stroke-width: 2; fill: none;"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+                    </div>
+                    <span style="font-size: 13px; font-weight: 600;">拉入群聊申请</span>
+                  </div>
+                  <div class="mobile-approval-body">
+                    <div class="approval-row">
+                      <span class="approval-label">申请人</span>
+                      <span class="approval-value">
+                        <span class="ava human" style="background: #0EA5E9; width: 20px; height: 20px; font-size: 9px;">叶</span>
+                        叶佳
+                      </span>
+                    </div>
+                    <div class="approval-row">
+                      <span class="approval-label">AI Bot</span>
+                      <span class="approval-value">
+                        <span class="ava ai" style="background: linear-gradient(135deg, #EC4899, #F97316); width: 20px; height: 20px; font-size: 9px; border-radius: 4px;">R</span>
+                        ResearchBot
+                      </span>
+                    </div>
+                    <div class="approval-row">
+                      <span class="approval-label">目标群</span>
+                      <span class="approval-value">AI 工作群</span>
+                    </div>
+                    <div class="approval-reason" style="font-size: 13px;">"想用 ResearchBot 帮大家做文献调研"</div>
+                  </div>
+                  <div class="mobile-approval-foot">
+                    <button class="btn btn-danger btn-sm-size" style="flex: 0 0 auto; padding: 10px 20px; font-size: 14px;">拒绝</button>
+                    <button class="btn btn-primary" style="font-size: 14px; padding: 10px;">同意加入</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       STEP 4b: 多人申请合并
+       ============================================================ -->
+  <div class="proto-section">
+    <div class="section-label">
+      <span class="step-num">4b</span>
+      <h2>多人申请合并 · Owner 审批一次</h2>
+      <span class="badge-role badge-owner">Owner</span>
+    </div>
+    <p class="section-desc">同一 AI 被多人申请拉进同一群，合并为一条申请，显示所有申请人列表。</p>
+
+    <div class="screen-row">
+      <div class="screen-card web">
+        <div class="screen-title">
+          <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          Web · 多人申请合并
+        </div>
+        <div class="chat-preview">
+          <div class="msg-row">
+            <div class="ava ai" style="background: linear-gradient(135deg, #F59E0B, #EF4444); width: 32px; height: 32px; font-size: 12px;">B</div>
+            <div class="msg-content">
+              <div class="msg-sender">BotFather <span class="tag-ai" style="font-size: 8px;">AI</span> <span class="msg-ts">18:45</span></div>
+
+              <div class="approval-card">
+                <div class="approval-card-head">
+                  <div class="card-icon">
+                    <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+                  </div>
+                  <span>拉入群聊申请 · 3 人申请</span>
+                </div>
+                <div class="approval-card-body">
+                  <div class="approval-row">
+                    <span class="approval-label">申请人</span>
+                  </div>
+                  <div class="approval-applicants">
+                    <span class="applicant-chip">
+                      <span class="ava human" style="background: #0EA5E9;">叶</span>
+                      叶佳
+                    </span>
+                    <span class="applicant-chip">
+                      <span class="ava human" style="background: #059669;">浩</span>
+                      浩哥
+                    </span>
+                    <span class="applicant-chip">
+                      <span class="ava human" style="background: #DC2626;">张</span>
+                      张三
+                    </span>
+                  </div>
+                  <div class="approval-row">
+                    <span class="approval-label">AI Bot</span>
+                    <span class="approval-value">
+                      <span class="ava ai ava-sm" style="background: linear-gradient(135deg, #EC4899, #F97316); width: 20px; height: 20px; font-size: 9px; border-radius: 4px;">R</span>
+                      ResearchBot
+                      <span class="tag-ai" style="font-size: 8px;">AI</span>
+                    </span>
+                  </div>
+                  <div class="approval-row">
+                    <span class="approval-label">目标群</span>
+                    <span class="approval-value">AI 工作群</span>
+                  </div>
+                </div>
+                <div class="approval-card-foot">
+                  <button class="btn btn-danger btn-sm-size">全部拒绝</button>
+                  <button class="btn btn-primary">同意加入</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       STEP 5: 审批完成 · 结果通知
+       ============================================================ -->
+  <div class="proto-section">
+    <div class="section-label">
+      <span class="step-num">5</span>
+      <h2>审批结果 · 双方通知</h2>
+      <span class="badge-role badge-applicant">申请方</span>
+      <span class="badge-role badge-owner">Owner</span>
+    </div>
+    <p class="section-desc">Owner 审批后，卡片更新为已审批状态；申请人在 BotFather 对话中收到结果通知。</p>
+
+    <div class="screen-row">
+      <!-- 已同意 - Owner 侧卡片 -->
+      <div class="screen-card" style="width: 480px;">
+        <div class="screen-title">
+          <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          Web · Owner 侧 · 已同意
+        </div>
+        <div class="chat-preview">
+          <div class="msg-row">
+            <div class="ava ai" style="background: linear-gradient(135deg, #F59E0B, #EF4444); width: 32px; height: 32px; font-size: 12px;">B</div>
+            <div class="msg-content">
+              <div class="msg-sender">BotFather <span class="tag-ai" style="font-size: 8px;">AI</span> <span class="msg-ts">18:42</span></div>
+              <div class="approval-card">
+                <div class="approval-card-head">
+                  <div class="card-icon"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg></div>
+                  <span>拉入群聊申请</span>
+                </div>
+                <div class="approval-card-body">
+                  <div class="approval-row">
+                    <span class="approval-label">申请人</span>
+                    <span class="approval-value">
+                      <span class="ava human" style="background: #0EA5E9; width: 20px; height: 20px; font-size: 9px;">叶</span>
+                      叶佳
+                    </span>
+                  </div>
+                  <div class="approval-row">
+                    <span class="approval-label">AI Bot</span>
+                    <span class="approval-value">ResearchBot</span>
+                  </div>
+                  <div class="approval-row">
+                    <span class="approval-label">目标群</span>
+                    <span class="approval-value">AI 工作群</span>
+                  </div>
+                </div>
+                <div class="approval-result approved">
+                  <span class="result-icon ok"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>
+                  <span style="color: var(--green);">已同意</span>
+                  <span class="result-time">18:50 · 已加入群聊</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 已拒绝 - Owner 侧卡片 -->
+      <div class="screen-card" style="width: 480px;">
+        <div class="screen-title">
+          <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          Web · Owner 侧 · 已拒绝
+        </div>
+        <div class="chat-preview">
+          <div class="msg-row">
+            <div class="ava ai" style="background: linear-gradient(135deg, #F59E0B, #EF4444); width: 32px; height: 32px; font-size: 12px;">B</div>
+            <div class="msg-content">
+              <div class="msg-sender">BotFather <span class="tag-ai" style="font-size: 8px;">AI</span> <span class="msg-ts">18:42</span></div>
+              <div class="approval-card">
+                <div class="approval-card-head">
+                  <div class="card-icon"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg></div>
+                  <span>拉入群聊申请</span>
+                </div>
+                <div class="approval-card-body">
+                  <div class="approval-row">
+                    <span class="approval-label">申请人</span>
+                    <span class="approval-value">
+                      <span class="ava human" style="background: #0EA5E9; width: 20px; height: 20px; font-size: 9px;">叶</span>
+                      叶佳
+                    </span>
+                  </div>
+                  <div class="approval-row">
+                    <span class="approval-label">AI Bot</span>
+                    <span class="approval-value">ResearchBot</span>
+                  </div>
+                  <div class="approval-row">
+                    <span class="approval-label">目标群</span>
+                    <span class="approval-value">AI 工作群</span>
+                  </div>
+                </div>
+                <div class="approval-result rejected">
+                  <span class="result-icon no"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>
+                  <span style="color: var(--red);">已拒绝</span>
+                  <span class="result-time">18:50</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 申请人收到的通知 -->
+    <div style="padding-left: 38px; margin-top: 24px;">
+      <p style="font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 12px;">申请人收到的 BotFather 通知：</p>
+      <div class="screen-row">
+        <div class="screen-card" style="width: 480px;">
+          <div class="screen-title">
+            <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            申请人 · 同意通知
+          </div>
+          <div class="chat-preview">
+            <div class="msg-row">
+              <div class="ava ai" style="background: linear-gradient(135deg, #F59E0B, #EF4444); width: 32px; height: 32px; font-size: 12px;">B</div>
+              <div class="msg-content">
+                <div class="msg-sender">BotFather <span class="tag-ai" style="font-size: 8px;">AI</span> <span class="msg-ts">18:50</span></div>
+                <div class="notify-bubble success">
+                  ✅ 李教授 已同意将 <strong>ResearchBot</strong> 拉入「AI 工作群」，Bot 已自动加入。
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="screen-card" style="width: 480px;">
+          <div class="screen-title">
+            <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            申请人 · 拒绝通知
+          </div>
+          <div class="chat-preview">
+            <div class="msg-row">
+              <div class="ava ai" style="background: linear-gradient(135deg, #F59E0B, #EF4444); width: 32px; height: 32px; font-size: 12px;">B</div>
+              <div class="msg-content">
+                <div class="msg-sender">BotFather <span class="tag-ai" style="font-size: 8px;">AI</span> <span class="msg-ts">18:50</span></div>
+                <div class="notify-bubble error">
+                  ❌ 李教授 拒绝了你将 <strong>ResearchBot</strong> 拉入「AI 工作群」的请求。
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 超时通知 -->
+    <div style="padding-left: 38px; margin-top: 24px;">
+      <p style="font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 12px;">超时通知（7 天未审批）：</p>
+      <div class="screen-row">
+        <div class="screen-card" style="width: 480px;">
+          <div class="screen-title">
+            <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            申请人 · 超时通知
+          </div>
+          <div class="chat-preview">
+            <div class="msg-row">
+              <div class="ava ai" style="background: linear-gradient(135deg, #F59E0B, #EF4444); width: 32px; height: 32px; font-size: 12px;">B</div>
+              <div class="msg-content">
+                <div class="msg-sender">BotFather <span class="tag-ai" style="font-size: 8px;">AI</span> <span class="msg-ts">03-26</span></div>
+                <div class="notify-bubble warning">
+                  ⏰ 你将 <strong>ResearchBot</strong> 拉入「AI 工作群」的申请已过期（超过 7 天未审批），请重新申请。
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       STEP 2c: 多个非好友 AI — 按 Owner 分组汇总确认
+       ============================================================ -->
+  <div class="proto-section">
+    <div class="section-label">
+      <span class="step-num">2c</span>
+      <h2>多 AI 申请 · 按 Owner 分组确认</h2>
+      <span class="badge-role badge-applicant">申请方</span>
+    </div>
+    <p class="section-desc">同时选中多个非好友 AI 点击确认后，弹出汇总确认面板。按 Owner 分组展示，一键提交，后端按 Owner 拆成独立申请。</p>
+
+    <div class="screen-row">
+      <!-- Web -->
+      <div class="screen-card web">
+        <div class="screen-title">
+          <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          Web · 多 AI 汇总确认
+        </div>
+        <div class="modal-overlay">
+          <div class="modal" style="width: 520px;">
+            <div class="modal-head">
+              <h3>确认申请 · 3 个 AI 需要 Owner 审批</h3>
+              <button class="modal-close"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+            </div>
+            <div class="apply-panel">
+              <!-- 提示 -->
+              <div class="apply-notice" style="margin-bottom: 20px;">
+                <svg viewBox="0 0 24 24" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                <p>以下 AI 不是你的好友，需要各自 Owner 审批后才能加入「AI 工作群」。将按 Owner 分别发送申请。</p>
+              </div>
+
+              <!-- Owner 分组 1 -->
+              <div style="margin-bottom: 16px;">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid var(--border-subtle);">
+                  <div class="ava human" style="background: #8B5CF6; width: 24px; height: 24px; font-size: 10px;">李</div>
+                  <span style="font-size: 13px; font-weight: 600;">Owner: 李教授</span>
+                  <span style="font-size: 11px; color: var(--text-tertiary); margin-left: auto;">2 个 AI</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 8px; padding-left: 32px;">
+                  <div style="display: flex; align-items: center; gap: 10px;">
+                    <div class="ava ai" style="background: linear-gradient(135deg, #EC4899, #F97316); width: 32px; height: 32px; font-size: 12px;">R</div>
+                    <div>
+                      <div style="font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 6px;">ResearchBot <span class="tag-ai">AI</span></div>
+                      <div style="font-size: 11px; color: var(--text-tertiary);">学术论文分析</div>
+                    </div>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 10px;">
+                    <div class="ava ai" style="background: linear-gradient(135deg, #A855F7, #EC4899); width: 32px; height: 32px; font-size: 12px;">P</div>
+                    <div>
+                      <div style="font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 6px;">PaperBot <span class="tag-ai">AI</span></div>
+                      <div style="font-size: 11px; color: var(--text-tertiary);">论文摘要生成</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Owner 分组 2 -->
+              <div style="margin-bottom: 20px;">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid var(--border-subtle);">
+                  <div class="ava human" style="background: #059669; width: 24px; height: 24px; font-size: 10px;">王</div>
+                  <span style="font-size: 13px; font-weight: 600;">Owner: 王工</span>
+                  <span style="font-size: 11px; color: var(--text-tertiary); margin-left: auto;">1 个 AI</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 8px; padding-left: 32px;">
+                  <div style="display: flex; align-items: center; gap: 10px;">
+                    <div class="ava ai" style="background: linear-gradient(135deg, #06B6D4, #3B82F6); width: 32px; height: 32px; font-size: 12px;">D</div>
+                    <div>
+                      <div style="font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 6px;">DataMiner <span class="tag-ai">AI</span></div>
+                      <div style="font-size: 11px; color: var(--text-tertiary);">数据分析助手</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 目标群 -->
+              <div class="apply-group-target" style="margin-bottom: 16px;">
+                <div class="ava group" style="background: linear-gradient(135deg, #6366F1, #8B5CF6); width: 36px; height: 36px;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                </div>
+                <div>
+                  <div class="apply-group-name">拉入: AI 工作群</div>
+                  <div class="apply-group-meta">4 人 · 2 AI</div>
+                </div>
+              </div>
+
+              <!-- 申请原因 -->
+              <div class="apply-field">
+                <label class="apply-label">申请原因 <span class="optional">(选填，统一附言)</span></label>
+                <textarea class="apply-textarea" placeholder="简要说明将这些 AI 拉入群聊的原因…">项目需要文献分析和数据挖掘的能力</textarea>
+              </div>
+
+              <div class="apply-actions">
+                <button class="btn btn-ghost">取消</button>
+                <button class="btn btn-primary btn-lg">提交申请（向 2 位 Owner）</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mobile -->
+      <div class="screen-card mobile">
+        <div class="screen-title">
+          <svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+          Mobile · 多 AI 汇总确认
+        </div>
+        <div class="mobile-frame">
+          <div class="mobile-status-bar">
+            <span class="time">18:41</span>
+            <div class="mobile-status-icons">
+              <svg viewBox="0 0 24 24"><rect x="1" y="6" width="18" height="12" rx="2"/><line x1="23" y1="13" x2="23" y2="11"/></svg>
+            </div>
+          </div>
+          <div style="background: rgba(0,0,0,0.25); padding: 40px 0 0;">
+            <div class="mobile-sheet">
+              <div class="sheet-handle"></div>
+              <div class="sheet-head">
+                <h3>确认申请 · 3 个 AI</h3>
+                <button class="sheet-close"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+              </div>
+              <div class="sheet-body">
+                <!-- Owner 1 -->
+                <div style="margin-bottom: 14px;">
+                  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                    <div class="ava human" style="background: #8B5CF6; width: 22px; height: 22px; font-size: 9px;">李</div>
+                    <span style="font-size: 14px; font-weight: 600;">李教授</span>
+                    <span style="font-size: 11px; color: var(--text-tertiary);">· 2 个 AI</span>
+                  </div>
+                  <div style="display: flex; gap: 8px; padding-left: 30px; flex-wrap: wrap;">
+                    <span class="applicant-chip">
+                      <span class="ava ai" style="background: linear-gradient(135deg, #EC4899, #F97316);">R</span>
+                      ResearchBot
+                    </span>
+                    <span class="applicant-chip">
+                      <span class="ava ai" style="background: linear-gradient(135deg, #A855F7, #EC4899);">P</span>
+                      PaperBot
+                    </span>
+                  </div>
+                </div>
+                <!-- Owner 2 -->
+                <div style="margin-bottom: 14px;">
+                  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                    <div class="ava human" style="background: #059669; width: 22px; height: 22px; font-size: 9px;">王</div>
+                    <span style="font-size: 14px; font-weight: 600;">王工</span>
+                    <span style="font-size: 11px; color: var(--text-tertiary);">· 1 个 AI</span>
+                  </div>
+                  <div style="display: flex; gap: 8px; padding-left: 30px;">
+                    <span class="applicant-chip">
+                      <span class="ava ai" style="background: linear-gradient(135deg, #06B6D4, #3B82F6);">D</span>
+                      DataMiner
+                    </span>
+                  </div>
+                </div>
+
+                <div style="height: 1px; background: var(--border-subtle); margin: 12px 0;"></div>
+
+                <!-- 目标群 -->
+                <div class="apply-group-target" style="margin-bottom: 12px;">
+                  <div class="ava group" style="background: linear-gradient(135deg, #6366F1, #8B5CF6); width: 32px; height: 32px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                  </div>
+                  <div>
+                    <div style="font-size: 14px; font-weight: 500;">AI 工作群</div>
+                    <div style="font-size: 12px; color: var(--text-tertiary);">4 人 · 2 AI</div>
+                  </div>
+                </div>
+
+                <div class="apply-field" style="margin-bottom: 12px;">
+                  <label class="apply-label">申请原因 <span class="optional">(选填)</span></label>
+                  <textarea class="apply-textarea" placeholder="简要说明原因…" style="min-height: 56px;">项目需要文献分析和数据挖掘的能力</textarea>
+                </div>
+
+                <button class="btn btn-primary btn-lg" style="width: 100%;">提交申请（向 2 位 Owner）</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       STEP 4d: Owner 收到同 Owner 多 AI 审批卡片
+       ============================================================ -->
+  <div class="proto-section">
+    <div class="section-label">
+      <span class="step-num">4d</span>
+      <h2>同 Owner 多 AI · 逐个审批卡片</h2>
+      <span class="badge-role badge-owner">Owner</span>
+    </div>
+    <p class="section-desc">同一 Owner 名下多个 AI 被申请拉入同一群，合并成一张审批卡片。可逐个同意/拒绝，也可一键全部同意。</p>
+
+    <div class="screen-row">
+      <!-- Web -->
+      <div class="screen-card web">
+        <div class="screen-title">
+          <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          Web · 同 Owner 多 AI 审批（待审批）
+        </div>
+        <div class="chat-preview">
+          <div class="msg-row">
+            <div class="ava ai" style="background: linear-gradient(135deg, #F59E0B, #EF4444); width: 32px; height: 32px; font-size: 12px;">B</div>
+            <div class="msg-content">
+              <div class="msg-sender">BotFather <span class="tag-ai" style="font-size: 8px;">AI</span> <span class="msg-ts">18:42</span></div>
+
+              <div class="approval-card" style="max-width: 460px;">
+                <div class="approval-card-head">
+                  <div class="card-icon">
+                    <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+                  </div>
+                  <span>拉入群聊申请 · 2 个 AI</span>
+                </div>
+                <div class="approval-card-body">
+                  <div class="approval-row">
+                    <span class="approval-label">申请人</span>
+                    <span class="approval-value">
+                      <span class="ava human ava-sm" style="background: #0EA5E9; width: 20px; height: 20px; font-size: 9px;">叶</span>
+                      叶佳
+                    </span>
+                  </div>
+                  <div class="approval-row">
+                    <span class="approval-label">目标群</span>
+                    <span class="approval-value">AI 工作群</span>
+                  </div>
+                  <div class="approval-reason" style="font-size: 12px; color: var(--text-tertiary);">"项目需要文献分析和数据挖掘的能力"</div>
+
+                  <!-- AI 列表 — 每个 AI 独立操作 -->
+                  <div style="border: 1px solid var(--border-default); border-radius: var(--r-md); overflow: hidden; margin-top: 12px;">
+                    <!-- AI 1 -->
+                    <div style="display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--border-subtle);">
+                      <div class="ava ai" style="background: linear-gradient(135deg, #EC4899, #F97316); width: 28px; height: 28px; font-size: 11px; border-radius: 4px;">R</div>
+                      <div style="flex: 1;">
+                        <div style="font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 6px;">ResearchBot <span class="tag-ai">AI</span></div>
+                        <div style="font-size: 11px; color: var(--text-tertiary);">学术论文分析</div>
+                      </div>
+                      <div style="display: flex; gap: 6px;">
+                        <button class="btn btn-danger btn-sm-size" style="padding: 4px 10px; font-size: 11px;">拒绝</button>
+                        <button class="btn btn-primary btn-sm-size" style="padding: 4px 10px; font-size: 11px;">同意</button>
+                      </div>
+                    </div>
+                    <!-- AI 2 -->
+                    <div style="display: flex; align-items: center; gap: 10px; padding: 10px 14px;">
+                      <div class="ava ai" style="background: linear-gradient(135deg, #A855F7, #EC4899); width: 28px; height: 28px; font-size: 11px; border-radius: 4px;">P</div>
+                      <div style="flex: 1;">
+                        <div style="font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 6px;">PaperBot <span class="tag-ai">AI</span></div>
+                        <div style="font-size: 11px; color: var(--text-tertiary);">论文摘要生成</div>
+                      </div>
+                      <div style="display: flex; gap: 6px;">
+                        <button class="btn btn-danger btn-sm-size" style="padding: 4px 10px; font-size: 11px;">拒绝</button>
+                        <button class="btn btn-primary btn-sm-size" style="padding: 4px 10px; font-size: 11px;">同意</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="approval-card-foot" style="flex-direction: column; gap: 6px;">
+                  <button class="btn btn-primary" style="width: 100%;">全部同意</button>
+                  <button class="btn btn-danger btn-sm-size" style="width: 100%; background: transparent;">全部拒绝</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Web 部分审批后 -->
+      <div class="screen-card web">
+        <div class="screen-title">
+          <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          Web · 部分审批完成（1 同意 / 1 拒绝）
+        </div>
+        <div class="chat-preview">
+          <div class="msg-row">
+            <div class="ava ai" style="background: linear-gradient(135deg, #F59E0B, #EF4444); width: 32px; height: 32px; font-size: 12px;">B</div>
+            <div class="msg-content">
+              <div class="msg-sender">BotFather <span class="tag-ai" style="font-size: 8px;">AI</span> <span class="msg-ts">18:42</span></div>
+
+              <div class="approval-card" style="max-width: 460px;">
+                <div class="approval-card-head">
+                  <div class="card-icon"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg></div>
+                  <span>拉入群聊申请 · 2 个 AI</span>
+                </div>
+                <div class="approval-card-body">
+                  <div class="approval-row">
+                    <span class="approval-label">申请人</span>
+                    <span class="approval-value">叶佳</span>
+                  </div>
+                  <div class="approval-row">
+                    <span class="approval-label">目标群</span>
+                    <span class="approval-value">AI 工作群</span>
+                  </div>
+
+                  <div style="border: 1px solid var(--border-default); border-radius: var(--r-md); overflow: hidden; margin-top: 12px;">
+                    <!-- AI 1 — 已同意 -->
+                    <div style="display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--border-subtle); background: var(--green-bg);">
+                      <div class="ava ai" style="background: linear-gradient(135deg, #EC4899, #F97316); width: 28px; height: 28px; font-size: 11px; border-radius: 4px;">R</div>
+                      <div style="flex: 1;">
+                        <div style="font-size: 13px; font-weight: 500;">ResearchBot</div>
+                      </div>
+                      <span style="font-size: 12px; font-weight: 600; color: var(--green); display: flex; align-items: center; gap: 4px;">
+                        <svg viewBox="0 0 24 24" style="width: 14px; height: 14px; stroke: var(--green); stroke-width: 2.5; fill: none; stroke-linecap: round; stroke-linejoin: round;"><polyline points="20 6 9 17 4 12"/></svg>
+                        已同意
+                      </span>
+                    </div>
+                    <!-- AI 2 — 已拒绝 -->
+                    <div style="display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--red-bg);">
+                      <div class="ava ai" style="background: linear-gradient(135deg, #A855F7, #EC4899); width: 28px; height: 28px; font-size: 11px; border-radius: 4px;">P</div>
+                      <div style="flex: 1;">
+                        <div style="font-size: 13px; font-weight: 500;">PaperBot</div>
+                      </div>
+                      <span style="font-size: 12px; font-weight: 600; color: var(--red); display: flex; align-items: center; gap: 4px;">
+                        <svg viewBox="0 0 24 24" style="width: 14px; height: 14px; stroke: var(--red); stroke-width: 2.5; fill: none; stroke-linecap: round;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        已拒绝
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div class="approval-result" style="background: var(--bg-base);">
+                  <span style="font-size: 12px; color: var(--text-secondary);">已审批完成 · 1 同意 / 1 拒绝</span>
+                  <span class="result-time">18:50</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       STEP 5b: 部分成功的申请人通知
+       ============================================================ -->
+  <div class="proto-section">
+    <div class="section-label">
+      <span class="step-num">5b</span>
+      <h2>部分成功通知 · 申请人视角</h2>
+      <span class="badge-role badge-applicant">申请方</span>
+    </div>
+    <p class="section-desc">多个 AI 分属不同 Owner，各自独立审批。申请人按 AI 逐条收到结果通知，不用等全部审批完。</p>
+
+    <div class="screen-row">
+      <div class="screen-card" style="width: 520px;">
+        <div class="screen-title">
+          <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          Web · 申请人逐条收到结果
+        </div>
+        <div class="chat-preview">
+          <div class="msg-row">
+            <div class="ava ai" style="background: linear-gradient(135deg, #F59E0B, #EF4444); width: 32px; height: 32px; font-size: 12px;">B</div>
+            <div class="msg-content">
+              <div class="msg-sender">BotFather <span class="tag-ai" style="font-size: 8px;">AI</span> <span class="msg-ts">18:50</span></div>
+              <div class="notify-bubble success" style="margin-bottom: 8px;">
+                ✅ 李教授 已同意将 <strong>ResearchBot</strong> 拉入「AI 工作群」，Bot 已自动加入。
+              </div>
+            </div>
+          </div>
+          <div class="msg-row">
+            <div class="ava ai" style="background: linear-gradient(135deg, #F59E0B, #EF4444); width: 32px; height: 32px; font-size: 12px;">B</div>
+            <div class="msg-content">
+              <div class="msg-sender">BotFather <span class="tag-ai" style="font-size: 8px;">AI</span> <span class="msg-ts">18:50</span></div>
+              <div class="notify-bubble error" style="margin-bottom: 8px;">
+                ❌ 李教授 拒绝了将 <strong>PaperBot</strong> 拉入「AI 工作群」的请求。
+              </div>
+            </div>
+          </div>
+          <div class="msg-row">
+            <div class="ava ai" style="background: linear-gradient(135deg, #F59E0B, #EF4444); width: 32px; height: 32px; font-size: 12px;">B</div>
+            <div class="msg-content">
+              <div class="msg-sender">BotFather <span class="tag-ai" style="font-size: 8px;">AI</span> <span class="msg-ts">19:15</span></div>
+              <div class="notify-bubble success">
+                ✅ 王工 已同意将 <strong>DataMiner</strong> 拉入「AI 工作群」，Bot 已自动加入。
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mobile -->
+      <div class="screen-card mobile">
+        <div class="screen-title">
+          <svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+          Mobile · 逐条结果通知
+        </div>
+        <div class="mobile-frame">
+          <div class="mobile-status-bar">
+            <span class="time">19:15</span>
+            <div class="mobile-status-icons">
+              <svg viewBox="0 0 24 24"><rect x="1" y="6" width="18" height="12" rx="2"/><line x1="23" y1="13" x2="23" y2="11"/></svg>
+            </div>
+          </div>
+          <div class="mobile-nav">
+            <button class="back-btn"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+            <span class="nav-title">BotFather</span>
+            <span class="nav-placeholder"></span>
+          </div>
+          <div class="mobile-chat-bg">
+            <div class="mobile-bubble" style="margin-bottom: 12px;">
+              <div class="ava ai" style="background: linear-gradient(135deg, #F59E0B, #EF4444);">B</div>
+              <div class="mobile-bubble-content">
+                <div class="mobile-bubble-name">BotFather <span class="tag-ai" style="font-size: 8px;">AI</span></div>
+                <div class="mobile-msg-bubble" style="border-left: 3px solid var(--green);">
+                  ✅ 李教授 已同意将 <strong>ResearchBot</strong> 拉入「AI 工作群」
+                </div>
+              </div>
+            </div>
+            <div class="mobile-bubble" style="margin-bottom: 12px;">
+              <div class="ava ai" style="background: linear-gradient(135deg, #F59E0B, #EF4444);">B</div>
+              <div class="mobile-bubble-content">
+                <div class="mobile-bubble-name">BotFather <span class="tag-ai" style="font-size: 8px;">AI</span></div>
+                <div class="mobile-msg-bubble" style="border-left: 3px solid var(--red);">
+                  ❌ 李教授 拒绝了 <strong>PaperBot</strong> 进群
+                </div>
+              </div>
+            </div>
+            <div class="mobile-bubble">
+              <div class="ava ai" style="background: linear-gradient(135deg, #F59E0B, #EF4444);">B</div>
+              <div class="mobile-bubble-content">
+                <div class="mobile-bubble-name">BotFather <span class="tag-ai" style="font-size: 8px;">AI</span></div>
+                <div class="mobile-msg-bubble" style="border-left: 3px solid var(--green);">
+                  ✅ 王工 已同意将 <strong>DataMiner</strong> 拉入「AI 工作群」
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       STEP 6: 边界场景汇总
+       ============================================================ -->
+  <div class="proto-section">
+    <div class="section-label">
+      <span class="step-num">6</span>
+      <h2>边界场景汇总</h2>
+    </div>
+    <p class="section-desc">所有特殊情况的 UI 表现一览。</p>
+
+    <div style="padding-left: 38px;">
+      <table style="width: 100%; border-collapse: collapse; font-size: 13px; background: var(--bg-surface); border-radius: var(--r-md); overflow: hidden; box-shadow: var(--shadow-sm);">
+        <thead>
+          <tr style="background: var(--bg-base); border-bottom: 1px solid var(--border-default);">
+            <th style="padding: 10px 16px; text-align: left; font-weight: 600; color: var(--text-secondary);">场景</th>
+            <th style="padding: 10px 16px; text-align: left; font-weight: 600; color: var(--text-secondary);">处理方式</th>
+            <th style="padding: 10px 16px; text-align: left; font-weight: 600; color: var(--text-secondary);">UI 表现</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom: 1px solid var(--border-subtle);">
+            <td style="padding: 10px 16px;">AI 已在群中</td>
+            <td style="padding: 10px 16px;">选人阶段前置校验</td>
+            <td style="padding: 10px 16px;"><span class="tag-in-group">已在群中</span> 置灰不可选</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border-subtle);">
+            <td style="padding: 10px 16px;">Owner = 申请人</td>
+            <td style="padding: 10px 16px;">免审批，直接拉入</td>
+            <td style="padding: 10px 16px;">跳过申请面板，直接显示「已拉入」</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border-subtle);">
+            <td style="padding: 10px 16px;">Owner = 群主</td>
+            <td style="padding: 10px 16px;">免审批，直接拉入</td>
+            <td style="padding: 10px 16px;">同上</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border-subtle);">
+            <td style="padding: 10px 16px;">已有审批中的申请</td>
+            <td style="padding: 10px 16px;">选人列表置灰</td>
+            <td style="padding: 10px 16px;"><span class="tag-pending">审批中</span> 置灰不可选</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border-subtle);">
+            <td style="padding: 10px 16px;">多人申请同一 AI 进同一群</td>
+            <td style="padding: 10px 16px;">合并展示，审批一次生效</td>
+            <td style="padding: 10px 16px;">卡片头显示「3 人申请」，申请人列表 Chips</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border-subtle);">
+            <td style="padding: 10px 16px;">7 天超时</td>
+            <td style="padding: 10px 16px;">自动过期</td>
+            <td style="padding: 10px 16px;">BotFather 发超时通知，申请人可重新申请</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border-subtle);">
+            <td style="padding: 10px 16px;">被拒绝后</td>
+            <td style="padding: 10px 16px;">恢复可选</td>
+            <td style="padding: 10px 16px;">选人列表中该 AI 恢复可选状态</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border-subtle);">
+            <td style="padding: 10px 16px;">同时拉多个非好友 AI（不同 Owner）</td>
+            <td style="padding: 10px 16px;">按 Owner 分组，各自独立审批</td>
+            <td style="padding: 10px 16px;">汇总确认面板按 Owner 分组 → 按钮「提交申请（向 N 位 Owner）」</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border-subtle);">
+            <td style="padding: 10px 16px;">同 Owner 多个 AI</td>
+            <td style="padding: 10px 16px;">合并一张审批卡片，逐个或一键操作</td>
+            <td style="padding: 10px 16px;">卡片内 AI 列表，每行独立同意/拒绝 + 底部「全部同意」</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px 16px;">部分成功</td>
+            <td style="padding: 10px 16px;">每个 AI 独立状态，逐条通知</td>
+            <td style="padding: 10px 16px;">BotFather 逐条发通知，不等全部审批完</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- Theme Toggle -->
+<button class="theme-fab" onclick="toggleTheme()" title="切换主题">🌓</button>
+
+<script>
+function toggleTheme() {
+  const html = document.documentElement;
+  const current = html.getAttribute('data-theme');
+  html.setAttribute('data-theme', current === 'light' ? 'dark' : 'light');
+}
+</script>
+
+</body>
+</html>
