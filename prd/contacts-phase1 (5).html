@@ -1,0 +1,1834 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Octo — 通讯录整合 Phase 1: 合并框架 (#157)</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+    /* ═══════════════════════════════════════════
+       Design Tokens — Octo v4 Design System
+       ═══════════════════════════════════════════ */
+    :root {
+      /* Brand */
+      --brand-from: #7C5CFC;
+      --brand-to: #00D4AA;
+      --brand-gradient: linear-gradient(135deg, var(--brand-from), var(--brand-to));
+      --brand-primary: #7C5CFC;
+
+      /* Fonts */
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans SC', sans-serif;
+      --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
+
+      /* Type Scale */
+      --text-h1: 700 28px/1.25 var(--font-sans);
+      --text-h2: 700 22px/1.3 var(--font-sans);
+      --text-h3: 600 16px/1.35 var(--font-sans);
+      --text-h4: 600 14px/1.4 var(--font-sans);
+      --text-body: 400 14px/1.6 var(--font-sans);
+      --text-body-medium: 500 14px/1.5 var(--font-sans);
+      --text-caption: 400 12px/1.5 var(--font-sans);
+      --text-tiny: 500 10px/1.4 var(--font-sans);
+
+      /* Spacing (4px grid) */
+      --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px;
+      --sp-5: 20px; --sp-6: 24px; --sp-8: 32px; --sp-10: 40px; --sp-12: 48px;
+
+      /* Radius */
+      --r-xs: 4px; --r-sm: 6px; --r-md: 10px; --r-lg: 14px; --r-xl: 20px; --r-full: 9999px;
+
+      /* Motion */
+      --ease: cubic-bezier(0.16, 1, 0.3, 1);
+      --dur: 200ms;
+      --dur-fast: 150ms;
+      --dur-slow: 350ms;
+
+      /* Buttons */
+      --btn-primary: #008F76;
+      --btn-ai: #5B3FD1;
+      --btn-danger: #D32F2F;
+    }
+
+    /* ── Light Theme (default) ── */
+    [data-theme="light"] {
+      --bg-deep: #F0F1F5;
+      --bg-base: #F7F8FA;
+      --bg-surface: #FFFFFF;
+      --bg-elevated: #F0F1F5;
+      --bg-hover: #EAEBF0;
+      --bg-active: #E2E3EA;
+      --bg-bubble: #FAFAFF;
+      --ai-panel-bg: #FAFAFF;
+
+      --text-primary: #1A1C24;
+      --text-secondary: #5C6070;
+      --text-tertiary: #9498A8;
+      --text-accent: #6B4FD8;
+
+      --border-subtle: rgba(0,0,0,0.05);
+      --border-default: rgba(0,0,0,0.08);
+      --border-strong: rgba(0,0,0,0.14);
+
+      --green: #00B894;
+      --green-bg: rgba(0,184,148,0.08);
+      --amber: #E6930A;
+      --amber-bg: rgba(230,147,10,0.08);
+      --red: #E5405E;
+      --red-bg: rgba(229,64,94,0.08);
+      --blue: #4A85E6;
+
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+      --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
+      --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
+
+      color-scheme: light;
+    }
+
+    /* ── Dark Theme ── */
+    [data-theme="dark"] {
+      --bg-deep: #111318;
+      --bg-base: #171921;
+      --bg-surface: #1E212B;
+      --bg-elevated: #262A36;
+      --bg-hover: #2E3240;
+      --bg-active: #363B4A;
+      --bg-bubble: #FAFAFF;
+      --ai-panel-bg: #1E1E2E;
+
+      --text-primary: #E4E6ED;
+      --text-secondary: #9CA1B3;
+      --text-tertiary: #7A7F96;
+      --text-accent: #B0A4FF;
+
+      --border-subtle: rgba(255,255,255,0.04);
+      --border-default: rgba(255,255,255,0.07);
+      --border-strong: rgba(255,255,255,0.12);
+
+      --green: #00D4AA;
+      --green-bg: rgba(0,212,170,0.1);
+      --amber: #FFAD33;
+      --amber-bg: rgba(255,173,51,0.1);
+      --red: #FF5C72;
+      --red-bg: rgba(255,92,114,0.1);
+      --blue: #5C9AFF;
+
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+      --shadow-lg: 0 8px 24px rgba(0,0,0,0.5);
+
+      color-scheme: dark;
+    }
+
+    /* ═══════════════════════════════════════════
+       Reset & Base
+       ═══════════════════════════════════════════ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font: var(--text-body);
+      background: var(--bg-deep);
+      color: var(--text-primary);
+      -webkit-font-smoothing: antialiased;
+    }
+    ::selection { background: rgba(124,92,252,0.25); }
+
+    /* ═══════════════════════════════════════════
+       Page Layout — Design Doc Shell
+       ═══════════════════════════════════════════ */
+    .doc-nav {
+      position: fixed; top: 0; left: 0; width: 240px; height: 100vh;
+      background: var(--bg-base); border-right: 1px solid var(--border-subtle);
+      padding: var(--sp-5); overflow-y: auto; z-index: 200;
+    }
+    .doc-nav-logo {
+      font: var(--text-h4);
+      background: var(--brand-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      margin-bottom: var(--sp-6);
+    }
+    .doc-nav-group {
+      font: var(--text-tiny); color: var(--text-tertiary);
+      text-transform: uppercase; letter-spacing: 0.5px;
+      margin: var(--sp-5) 0 var(--sp-2);
+    }
+    .doc-nav-item {
+      display: block; padding: var(--sp-2) var(--sp-3); margin: var(--sp-1) 0;
+      border-radius: var(--r-sm); font: var(--text-caption); color: var(--text-secondary);
+      text-decoration: none; cursor: pointer; transition: all var(--dur);
+    }
+    .doc-nav-item:hover { background: var(--bg-hover); color: var(--text-primary); }
+    .doc-nav-item.active {
+      background: rgba(124,92,252,0.08); color: var(--text-accent);
+    }
+
+    .doc-main { margin-left: 240px; padding: var(--sp-10) var(--sp-8); }
+    .doc-container {
+      max-width: 960px; margin: 0 auto;
+    }
+
+    /* Section visibility */
+    .doc-section { display: none; }
+    .doc-section.active { display: block; }
+
+    /* Section heading */
+    .section-header {
+      margin-bottom: var(--sp-8);
+    }
+    .section-header h1 {
+      font: var(--text-h1); margin-bottom: var(--sp-2);
+    }
+    .section-header .subtitle {
+      font: var(--text-body); color: var(--text-secondary);
+    }
+    .section-header .tags { display: flex; gap: var(--sp-2); margin-top: var(--sp-3); flex-wrap: wrap; }
+    .tag {
+      display: inline-flex; align-items: center; padding: 2px 10px;
+      border-radius: var(--r-full); font: var(--text-tiny);
+    }
+    .tag-mvp { background: var(--green-bg); color: var(--green); }
+    .tag-p0 { background: var(--red-bg); color: var(--red); }
+    .tag-p1 { background: var(--amber-bg); color: var(--amber); }
+    .tag-web { background: rgba(74,133,230,0.1); color: var(--blue); }
+    .tag-mobile { background: rgba(124,92,252,0.1); color: var(--text-accent); }
+
+    /* Content blocks */
+    .content-card {
+      background: var(--bg-surface); border: 1px solid var(--border-subtle);
+      border-radius: var(--r-lg); padding: var(--sp-6);
+      margin-bottom: var(--sp-6);
+    }
+    .content-card h2 { font: var(--text-h3); margin-bottom: var(--sp-4); }
+    .content-card h3 { font: var(--text-h4); margin-bottom: var(--sp-3); margin-top: var(--sp-5); }
+    .content-card h3:first-child { margin-top: 0; }
+    .content-card p { margin-bottom: var(--sp-3); color: var(--text-secondary); }
+    .content-card ul { padding-left: var(--sp-5); margin-bottom: var(--sp-3); }
+    .content-card li { margin-bottom: var(--sp-2); color: var(--text-secondary); }
+    .content-card li strong { color: var(--text-primary); }
+    .content-card table { width: 100%; border-collapse: collapse; margin-bottom: var(--sp-4); }
+    .content-card th, .content-card td {
+      text-align: left; padding: var(--sp-2) var(--sp-3);
+      border-bottom: 1px solid var(--border-subtle); font: var(--text-caption);
+    }
+    .content-card th { color: var(--text-tertiary); font-weight: 500; }
+
+    /* ═══════════════════════════════════════════
+       UI Components — Avatars
+       ═══════════════════════════════════════════ */
+    .avatar {
+      display: inline-flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 600; flex-shrink: 0;
+      user-select: none; position: relative;
+    }
+    .avatar-human { border-radius: 50%; }
+    .avatar-ai { border-radius: var(--r-sm); }
+    .avatar-group { border-radius: var(--r-md); }
+
+    .avatar-xs { width: 28px; height: 28px; font-size: 11px; }
+    .avatar-sm { width: 36px; height: 36px; font-size: 13px; }
+    .avatar-md { width: 40px; height: 40px; font-size: 14px; }
+    .avatar-lg { width: 56px; height: 56px; font-size: 20px; }
+    .avatar-xl { width: 72px; height: 72px; font-size: 26px; }
+
+    /* AI text badge (next to name, NOT on avatar) */
+    .badge-ai {
+      display: inline-flex; align-items: center; padding: 1px 6px;
+      border-radius: var(--r-xs); font: var(--text-tiny);
+      background: var(--brand-gradient); color: #fff;
+    }
+    .badge-group {
+      display: inline-flex; align-items: center; padding: 1px 6px;
+      border-radius: var(--r-xs); font: var(--text-tiny);
+      background: var(--bg-active); color: var(--text-secondary);
+    }
+
+    /* ═══════════════════════════════════════════
+       UI Components — Buttons
+       ═══════════════════════════════════════════ */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: var(--sp-2) var(--sp-5); border-radius: var(--r-sm);
+      font: var(--text-caption); font-weight: 500; border: none; cursor: pointer;
+      transition: all var(--dur) var(--ease); letter-spacing: 0.2px;
+    }
+    .btn-primary {
+      background: var(--btn-primary); color: #fff;
+    }
+    .btn-primary:hover { filter: brightness(1.08); }
+    .btn-danger {
+      background: var(--btn-danger); color: #fff;
+    }
+    .btn-danger:hover { filter: brightness(1.08); }
+    .btn-secondary {
+      background: var(--bg-elevated); color: var(--text-primary);
+      border: 1px solid var(--border-default);
+    }
+    .btn-secondary:hover { background: var(--bg-hover); }
+    .btn-ghost {
+      background: transparent; color: var(--text-secondary);
+    }
+    .btn-ghost:hover { background: var(--bg-hover); color: var(--text-primary); }
+    .btn-disabled {
+      background: var(--bg-elevated); color: var(--text-tertiary);
+      cursor: not-allowed; opacity: 0.6;
+    }
+
+    /* ═══════════════════════════════════════════
+       Demo Frame — Web & Mobile Mockup Shells
+       ═══════════════════════════════════════════ */
+
+    /* Platform toggle */
+    .platform-toggle {
+      display: inline-flex; background: var(--bg-elevated); border-radius: var(--r-md);
+      padding: 3px; margin-bottom: var(--sp-6);
+    }
+    .platform-btn {
+      padding: var(--sp-2) var(--sp-4); border-radius: var(--r-sm);
+      font: var(--text-caption); font-weight: 500; color: var(--text-secondary);
+      border: none; background: transparent; cursor: pointer;
+      transition: all var(--dur);
+    }
+    .platform-btn.active {
+      background: var(--bg-surface); color: var(--text-primary);
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* Web frame */
+    .web-frame {
+      background: var(--bg-deep); border-radius: var(--r-lg);
+      border: 1px solid var(--border-default); overflow: hidden;
+      box-shadow: var(--shadow-lg);
+    }
+    .web-frame-bar {
+      height: 36px; background: var(--bg-base);
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex; align-items: center; padding: 0 var(--sp-3); gap: var(--sp-2);
+    }
+    .web-frame-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+    }
+    .web-frame-dot.r { background: #FF5F57; }
+    .web-frame-dot.y { background: #FEBC2E; }
+    .web-frame-dot.g { background: #28C840; }
+    .web-frame-body {
+      display: flex; height: 560px;
+    }
+
+    /* Mobile frame */
+    .mobile-frame {
+      width: 375px; height: 812px; border-radius: 40px;
+      background: var(--bg-deep); border: 3px solid var(--border-strong);
+      overflow: hidden; position: relative;
+      box-shadow: var(--shadow-lg);
+    }
+    .mobile-frame .status-bar {
+      height: 44px; display: flex; align-items: flex-end;
+      justify-content: center; padding-bottom: 6px;
+      font: 600 14px/1 var(--font-sans); color: var(--text-primary);
+    }
+    .mobile-frame .home-indicator {
+      position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
+      width: 134px; height: 5px; border-radius: 3px; background: var(--text-tertiary); opacity: 0.3;
+    }
+
+    /* ═══════════════════════════════════════════
+       Mock UI — Nav Rail (Web)
+       ═══════════════════════════════════════════ */
+    .mock-nav-rail {
+      width: 60px; background: var(--bg-deep);
+      border-right: 1px solid var(--border-subtle);
+      display: flex; flex-direction: column; align-items: center;
+      padding: var(--sp-4) 0; gap: var(--sp-2); flex-shrink: 0;
+    }
+    .mock-nav-btn {
+      width: 40px; height: 40px; border-radius: var(--r-sm);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--text-tertiary); cursor: pointer; position: relative;
+      transition: all var(--dur);
+    }
+    .mock-nav-btn:hover { background: var(--bg-hover); color: var(--text-secondary); }
+    .mock-nav-btn.active { color: var(--text-primary); }
+    .mock-nav-btn.active::before {
+      content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+      width: 3px; height: 20px; border-radius: 0 3px 3px 0;
+      background: var(--brand-gradient);
+    }
+
+    /* ═══════════════════════════════════════════
+       Mock UI — Contacts Sidebar (Web)
+       ═══════════════════════════════════════════ */
+    .mock-sidebar {
+      width: 280px; background: var(--bg-base);
+      border-right: 1px solid var(--border-subtle);
+      display: flex; flex-direction: column; flex-shrink: 0;
+      overflow: hidden;
+    }
+    .mock-sidebar-header {
+      padding: var(--sp-4) var(--sp-4) 0;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .mock-sidebar-title {
+      font: var(--text-h4); display: flex; align-items: center; gap: var(--sp-2);
+    }
+
+    /* Filter select (dropdown) */
+    .filter-select-wrap {
+      padding: var(--sp-3) var(--sp-4); flex-shrink: 0;
+    }
+    .filter-select {
+      width: 100%; padding: var(--sp-2) var(--sp-3);
+      padding-right: var(--sp-8);
+      background: var(--bg-elevated); border: 1px solid var(--border-default);
+      border-radius: var(--r-md); font: var(--text-caption); font-weight: 500;
+      color: var(--text-primary); cursor: pointer;
+      appearance: none; -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239498A8' stroke-width='2' stroke-linecap='round' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      transition: border-color var(--dur);
+    }
+    .filter-select:hover { border-color: var(--border-strong); }
+    .filter-select:focus { outline: none; border-color: var(--brand-primary); }
+
+    /* Search */
+    .mock-search {
+      margin: 0 var(--sp-4) var(--sp-3);
+      padding: var(--sp-2) var(--sp-3);
+      background: var(--bg-elevated); border-radius: var(--r-md);
+      font: var(--text-caption); color: var(--text-tertiary);
+      display: flex; align-items: center; gap: var(--sp-2);
+    }
+
+    /* BotFather banner */
+    .botfather-banner {
+      margin: 0 var(--sp-3) var(--sp-2);
+      padding: var(--sp-3) var(--sp-4);
+      background: var(--brand-gradient); border-radius: var(--r-md);
+      display: flex; align-items: center; gap: var(--sp-3);
+      cursor: pointer; transition: opacity var(--dur);
+    }
+    .botfather-banner:hover { opacity: 0.92; }
+    .botfather-icon {
+      width: 32px; height: 32px; border-radius: var(--r-sm);
+      background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center;
+    }
+    .botfather-name { font: var(--text-body-medium); color: #fff; }
+    .botfather-desc { font: var(--text-tiny); color: rgba(255,255,255,0.7); }
+
+    /* ═══════════════════════════════════════════
+       Category Items (WeChat-style expandable)
+       ═══════════════════════════════════════════ */
+    .category-list {
+      flex: 1; overflow-y: auto;
+    }
+    .category-item {
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .category-header {
+      display: flex; align-items: center; gap: var(--sp-2);
+      padding: var(--sp-2) var(--sp-4);
+      cursor: pointer; transition: background var(--dur);
+      user-select: none;
+    }
+    .category-header:hover { background: var(--bg-hover); }
+    .category-icon {
+      width: 28px; height: 28px; border-radius: var(--r-sm);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; color: var(--text-secondary);
+      background: var(--bg-elevated);
+    }
+    .category-label {
+      flex: 1; font: var(--text-body); font-weight: 500; color: var(--text-primary);
+    }
+    .category-count {
+      font: var(--text-caption); color: var(--text-tertiary); margin-right: var(--sp-1);
+    }
+    .category-arrow {
+      color: var(--text-tertiary); font-size: 12px;
+      transition: transform var(--dur) var(--ease);
+      flex-shrink: 0;
+    }
+    /* Filter chips (inside expanded categories) */
+    .filter-chips {
+      display: flex; gap: var(--sp-1); padding: var(--sp-2) var(--sp-4) var(--sp-1);
+      padding-left: calc(var(--sp-4) + 28px + var(--sp-2));
+    }
+    .filter-chip {
+      padding: 2px 10px; border-radius: var(--r-full);
+      font: var(--text-tiny); font-weight: 500; cursor: pointer;
+      border: 1px solid var(--border-default);
+      background: transparent; color: var(--text-secondary);
+      transition: all var(--dur);
+    }
+    .filter-chip:hover { background: var(--bg-hover); }
+    .filter-chip.active {
+      background: var(--brand-primary); color: #fff;
+      border-color: var(--brand-primary);
+    }
+    .category-item.expanded .category-arrow {
+      transform: rotate(90deg);
+    }
+    .category-content {
+      display: none; background: var(--bg-surface);
+    }
+    .category-item.expanded .category-content {
+      display: block;
+    }
+    .category-content .contact-item {
+      padding-left: calc(var(--sp-4) + 28px + var(--sp-2));
+    }
+    .category-content .contact-letter {
+      padding-left: calc(var(--sp-4) + 28px + var(--sp-2));
+    }
+
+    /* Contact list items */
+    .contact-list { flex: 1; overflow-y: auto; }
+    .contact-letter {
+      padding: var(--sp-1) var(--sp-5);
+      font: var(--text-tiny); color: var(--text-tertiary);
+      position: sticky; top: 0; background: var(--bg-base); z-index: 1;
+    }
+    .contact-item {
+      display: flex; align-items: center; gap: var(--sp-3);
+      padding: var(--sp-2) var(--sp-4);
+      cursor: pointer; transition: background var(--dur);
+    }
+    .contact-item:hover { background: var(--bg-hover); }
+    .contact-item.active { background: var(--bg-active); }
+    .contact-name {
+      font: var(--text-body); font-weight: 500; display: flex; align-items: center; gap: var(--sp-2);
+      color: var(--text-primary);
+    }
+
+    /* ═══════════════════════════════════════════
+       Mock UI — Detail Panel (Web)
+       ═══════════════════════════════════════════ */
+    .mock-detail {
+      flex: 1; background: var(--bg-surface);
+      display: flex; align-items: center; justify-content: center;
+      overflow-y: auto;
+    }
+    .mock-detail-empty {
+      text-align: center; color: var(--text-tertiary); font: var(--text-caption);
+    }
+
+    /* Card (shared between web detail and mobile) */
+    .profile-card {
+      width: 100%; max-width: 400px; padding: var(--sp-6) var(--sp-5);
+    }
+    .profile-card-header {
+      display: flex; flex-direction: column; align-items: center;
+      margin-bottom: var(--sp-5); text-align: center;
+    }
+    .profile-card-header .avatar { margin-bottom: var(--sp-3); }
+    .profile-card-name {
+      font: var(--text-h4); display: flex; align-items: center; gap: var(--sp-2);
+      justify-content: center; margin-bottom: var(--sp-1);
+    }
+    .profile-card-sub { font: var(--text-caption); color: var(--text-tertiary); }
+
+    .profile-card-info {
+      background: var(--bg-base); border-radius: var(--r-md);
+      margin-bottom: var(--sp-3); overflow: hidden;
+    }
+    .profile-card-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: var(--sp-2) var(--sp-4);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .profile-card-row:last-child { border-bottom: none; }
+    .profile-card-label { font: var(--text-caption); color: var(--text-tertiary); }
+    .profile-card-value { font: var(--text-caption); font-weight: 500; color: var(--text-primary); max-width: 200px; text-align: right; }
+
+    .profile-card-actions {
+      display: flex; flex-direction: column; gap: var(--sp-2);
+    }
+    .profile-card-actions .btn { width: 100%; }
+
+    /* Menu items (person card) */
+    .profile-menu {
+      background: var(--bg-base); border-radius: var(--r-md);
+      margin-bottom: var(--sp-3); overflow: hidden;
+    }
+    .profile-menu-item {
+      padding: var(--sp-2) var(--sp-4);
+      font: var(--text-body); color: var(--text-primary);
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex; align-items: center; justify-content: space-between;
+      cursor: pointer; transition: background var(--dur);
+    }
+    .profile-menu-item:last-child { border-bottom: none; }
+    .profile-menu-item:hover { background: var(--bg-hover); }
+    .profile-menu-item.danger { color: var(--red); }
+    .profile-menu-item .chevron {
+      color: var(--text-tertiary); font-size: 12px;
+    }
+
+    /* ═══════════════════════════════════════════
+       Mock UI — Approval Card (Chat Message)
+       ═══════════════════════════════════════════ */
+    .approval-card {
+      background: var(--ai-panel-bg); border-radius: var(--r-md);
+      border: 1px solid var(--border-subtle);
+      width: 300px; max-width: 320px; overflow: hidden;
+    }
+    .approval-card-gradient {
+      height: 2px; background: var(--brand-gradient); opacity: 0.6;
+    }
+    .approval-card-body { padding: var(--sp-4); }
+    .approval-card-title {
+      font: var(--text-body-medium); margin-bottom: var(--sp-3);
+      display: flex; align-items: center; gap: var(--sp-2);
+    }
+    .approval-card-row {
+      display: flex; justify-content: space-between;
+      padding: var(--sp-1) 0; font: var(--text-caption);
+    }
+    .approval-card-row .label { color: var(--text-tertiary); }
+    .approval-card-row .value { color: var(--text-primary); }
+    .approval-card-reason {
+      margin: var(--sp-3) 0;
+      padding: var(--sp-3); background: var(--bg-elevated);
+      border-radius: var(--r-sm); font: var(--text-caption);
+      color: var(--text-secondary); font-style: italic;
+    }
+    .approval-card-actions {
+      display: flex; gap: var(--sp-2); margin-top: var(--sp-3);
+    }
+    .approval-card-actions .btn { flex: 1; padding: var(--sp-2); }
+
+    /* ═══════════════════════════════════════════
+       Mock UI — Apply Form
+       ═══════════════════════════════════════════ */
+    .apply-form {
+      width: 100%; max-width: 400px; padding: var(--sp-6);
+    }
+    .apply-form-title {
+      font: var(--text-h4); margin-bottom: var(--sp-5);
+    }
+    .apply-form-target {
+      display: flex; align-items: center; gap: var(--sp-3);
+      padding: var(--sp-3); background: var(--bg-elevated);
+      border-radius: var(--r-md); margin-bottom: var(--sp-5);
+    }
+    .apply-form textarea {
+      width: 100%; padding: var(--sp-3);
+      border: 1px solid var(--border-default); border-radius: var(--r-md);
+      background: var(--bg-elevated); color: var(--text-primary);
+      font: var(--text-body); min-height: 88px; resize: none;
+      transition: border-color var(--dur);
+    }
+    .apply-form textarea:focus {
+      outline: none; border-color: var(--btn-primary);
+    }
+    .apply-form-label {
+      display: block; font: var(--text-caption); color: var(--text-tertiary);
+      margin-bottom: var(--sp-1);
+    }
+    .apply-form-btns {
+      display: flex; gap: var(--sp-2); margin-top: var(--sp-5);
+    }
+    .apply-form-btns .btn { flex: 1; }
+
+    /* Success state */
+    .success-state {
+      text-align: center; padding: var(--sp-10) var(--sp-6);
+    }
+    .success-icon {
+      width: 64px; height: 64px; border-radius: 50%;
+      background: var(--green-bg); display: flex;
+      align-items: center; justify-content: center;
+      margin: 0 auto var(--sp-4);
+    }
+    .success-state h3 { font: var(--text-body-medium); margin-bottom: var(--sp-2); }
+    .success-state p { font: var(--text-caption); color: var(--text-tertiary); margin-bottom: var(--sp-5); }
+
+    /* ═══════════════════════════════════════════
+       Mobile-specific overrides
+       ═══════════════════════════════════════════ */
+    .mobile-frame .mock-sidebar {
+      width: 100%; border-right: none;
+    }
+    .mobile-frame .contact-letter {
+      background: var(--bg-deep);
+    }
+
+    /* Mobile bottom sheet */
+    .mobile-sheet {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      background: var(--bg-surface); border-radius: var(--r-xl) var(--r-xl) 0 0;
+      box-shadow: 0 -4px 24px rgba(0,0,0,0.15);
+      max-height: 75%;
+      overflow-y: auto;
+    }
+    .mobile-sheet-handle {
+      width: 36px; height: 4px; border-radius: 2px;
+      background: var(--text-tertiary); opacity: 0.3;
+      margin: var(--sp-3) auto var(--sp-2);
+    }
+    .mobile-sheet .profile-card { max-width: 100%; padding: var(--sp-4) var(--sp-5) var(--sp-8); }
+
+    /* Mobile nav bar */
+    .mobile-nav-bar {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      height: 83px; /* 49 + 34 safe area */
+      background: var(--bg-base); border-top: 1px solid var(--border-subtle);
+      display: flex; align-items: flex-start; justify-content: space-around;
+      padding-top: var(--sp-2);
+    }
+    .mobile-nav-item {
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
+      font: var(--text-tiny); color: var(--text-tertiary);
+      cursor: pointer;
+    }
+    .mobile-nav-item.active { color: var(--text-accent); }
+    .mobile-nav-item svg { width: 22px; height: 22px; }
+
+    /* ═══════════════════════════════════════════
+       Flow Diagram
+       ═══════════════════════════════════════════ */
+    .flow {
+      display: flex; align-items: center; gap: var(--sp-2);
+      flex-wrap: wrap; margin: var(--sp-4) 0;
+    }
+    .flow-step {
+      padding: var(--sp-2) var(--sp-4);
+      border-radius: var(--r-md); font: var(--text-caption);
+      background: var(--bg-elevated); color: var(--text-primary);
+    }
+    .flow-step.start { background: var(--green-bg); color: var(--green); }
+    .flow-step.end { background: rgba(124,92,252,0.1); color: var(--text-accent); }
+    .flow-arrow { color: var(--text-tertiary); font-size: 16px; }
+
+    /* ═══════════════════════════════════════════
+       Theme Toggle
+       ═══════════════════════════════════════════ */
+    .theme-toggle {
+      position: fixed; top: var(--sp-4); right: var(--sp-4); z-index: 300;
+      width: 36px; height: 36px; border-radius: var(--r-sm);
+      background: var(--bg-elevated); border: 1px solid var(--border-default);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-size: 16px; transition: all var(--dur);
+    }
+    .theme-toggle:hover { background: var(--bg-hover); }
+
+    /* ═══════════════════════════════════════════
+       Annotation
+       ═══════════════════════════════════════════ */
+    .annotation {
+      margin-top: var(--sp-3);
+      padding: var(--sp-3) var(--sp-4);
+      background: var(--amber-bg); border-radius: var(--r-md);
+      font: var(--text-caption); color: var(--amber);
+      border-left: 3px solid var(--amber);
+    }
+
+    .design-note {
+      margin-top: var(--sp-3);
+      padding: var(--sp-3) var(--sp-4);
+      background: rgba(124,92,252,0.06);
+      border-radius: var(--r-md);
+      font: var(--text-caption); color: var(--text-accent);
+      border-left: 3px solid var(--brand-primary);
+    }
+
+    /* ═══════════════════════════════════════════
+       Responsive (doc layout)
+       ═══════════════════════════════════════════ */
+    @media (max-width: 900px) {
+      .doc-nav { display: none; }
+      .doc-main { margin-left: 0; padding: var(--sp-5) var(--sp-4); }
+    }
+
+    /* Dual mockup layout */
+    .dual-mockup {
+      display: flex; gap: var(--sp-8); align-items: flex-start; flex-wrap: wrap;
+    }
+    .dual-mockup > * { flex-shrink: 0; }
+  </style>
+</head>
+<body>
+
+<!-- ═══════ Doc Navigation ═══════ -->
+<nav class="doc-nav">
+  <div class="doc-nav-logo">🐙 Octo Design</div>
+
+  <div class="doc-nav-group">概述</div>
+  <a class="doc-nav-item active" data-section="overview" onclick="showSection('overview')">背景与原则</a>
+  <a class="doc-nav-item" data-section="scope" onclick="showSection('scope')">功能范围</a>
+
+  <div class="doc-nav-group">Web 端</div>
+  <a class="doc-nav-item" data-section="web-contacts" onclick="showSection('web-contacts')">交互 Demo</a>
+
+  <div class="doc-nav-group">移动端</div>
+  <a class="doc-nav-item" data-section="mobile-contacts" onclick="showSection('mobile-contacts')">交互 Demo</a>
+
+  <div class="doc-nav-group">附录</div>
+  <a class="doc-nav-item" data-section="spec" onclick="showSection('spec')">设计规格</a>
+</nav>
+
+<!-- Theme toggle -->
+<div class="theme-toggle" onclick="toggleTheme()">🌓</div>
+
+<!-- ═══════ Main Content ═══════ -->
+<main class="doc-main">
+<div class="doc-container">
+
+  <!-- ────── SECTION: Overview ────── -->
+  <div id="overview" class="doc-section active">
+    <div class="section-header">
+      <h1>通讯录与 Bot 整合</h1>
+      <p class="subtitle">人和 AI 是平等的一等公民，在同一个列表里展示</p>
+      <div class="tags">
+        <span class="tag tag-p0">P0</span>
+        <span class="tag tag-mvp">MVP</span>
+        <span class="tag tag-web">Web</span>
+        <span class="tag tag-mobile">iOS / Android</span>
+      </div>
+    </div>
+
+    <div class="content-card">
+      <h2>核心原则</h2>
+      <ul>
+        <li><strong>分类入口 + 展开列表</strong> — 参考微信通讯录，三个分类入口可展开/折叠</li>
+        <li><strong>形状即身份</strong> — 人=圆形，Bot=方形(r-sm)+渐变背景，群=大圆角方形(r-md)</li>
+        <li><strong>统一卡片体验</strong> — 点击任何联系人/Bot/群聊 都打开卡片（人名片、AI 名片、群聊卡片）</li>
+        <li><strong>无角标设计</strong> — Bot 头像不加角标，靠形状+渐变双重区分（名字旁可加 [AI] 文字标签）</li>
+        <li><strong>默认走审批</strong> — 添加 Bot 好友统一走审批流程</li>
+      </ul>
+    </div>
+
+    <div class="content-card">
+      <h2>用户故事</h2>
+      <ul>
+        <li>作为用户，我希望通过分类入口（群聊/已添加 AI/全部联系人）快速定位</li>
+        <li>作为用户，我希望点击任何通讯录项都能看到卡片（人名片、AI 名片、群聊卡片）</li>
+        <li>作为用户，我希望快速找到 BotFather 管理我的 Bot</li>
+        <li>作为 Owner，我希望收到并审批加好友申请</li>
+        <li>作为申请人，我希望收到审批通过/拒绝的通知</li>
+        <li>作为用户，我希望能解除已添加的 Bot 好友关系</li>
+        <li>作为用户，我在群聊成员列表点非好友 AI 时先看名片 <span class="tag tag-mvp">#105</span></li>
+        <li>作为用户，我搜索到非好友 AI 时先看名片再加好友 <span class="tag tag-mvp">#106</span></li>
+      </ul>
+    </div>
+
+    <div class="content-card">
+      <h2>头像身份规则（全端统一）</h2>
+      <div style="display: flex; gap: var(--sp-8); flex-wrap: wrap; margin-top: var(--sp-4);">
+        <div style="text-align: center;">
+          <div class="avatar avatar-lg avatar-human" style="background: #0EA5E9; margin: 0 auto var(--sp-3);">张</div>
+          <div style="font: var(--text-body-medium);">人类</div>
+          <div style="font: var(--text-caption); color: var(--text-tertiary);">圆形 · 50%</div>
+        </div>
+        <div style="text-align: center;">
+          <div class="avatar avatar-lg avatar-ai" style="background: linear-gradient(135deg, #7C5CFC, #5C9AFF); margin: 0 auto var(--sp-3);">阿</div>
+          <div style="font: var(--text-body-medium);">Bot <span class="badge-ai">AI</span></div>
+          <div style="font: var(--text-caption); color: var(--text-tertiary);">圆角方形 · r-sm(6px)</div>
+          <div style="font: var(--text-caption); color: var(--text-tertiary);">渐变背景 · 无角标</div>
+        </div>
+        <div style="text-align: center;">
+          <div class="avatar avatar-lg avatar-group" style="background: linear-gradient(135deg, #6366F1, #8B5CF6); margin: 0 auto var(--sp-3);">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <div style="font: var(--text-body-medium);">群组</div>
+          <div style="font: var(--text-caption); color: var(--text-tertiary);">大圆角方形 · r-md(10px)</div>
+        </div>
+      </div>
+      <div class="design-note" style="margin-top: var(--sp-5);">
+        🎨 设计要点：Bot 头像靠「方形 + 渐变背景」与人类区分，不额外加角标。名字后面用 [AI] 文字标签即可。
+      </div>
+    </div>
+  </div>
+
+  <!-- ────── SECTION: Scope ────── -->
+  <div id="scope" class="doc-section">
+    <div class="section-header">
+      <h1>功能范围 (MVP)</h1>
+    </div>
+    <div class="content-card">
+      <table>
+        <thead><tr><th>模块</th><th>功能</th><th>端</th><th>优先级</th></tr></thead>
+        <tbody>
+          <tr><td>通讯录列表</td><td>分类入口（群聊/已添加AI/全部联系人）+ 搜索</td><td>全端</td><td><span class="tag tag-mvp">MVP</span></td></tr>
+          <tr><td>BotFather 入口</td><td>品牌渐变横幅，底部管理入口</td><td>全端</td><td><span class="tag tag-mvp">MVP</span></td></tr>
+          <tr><td>人的名片</td><td>设置备注、解除好友（二次确认）、拉黑（二次确认）、来源、发消息</td><td>全端</td><td><span class="tag tag-mvp">MVP</span></td></tr>
+          <tr><td>Bot 名片</td><td>头像(方形+渐变)、名字+[AI]、@用户名、简介、创建者、按钮（两态）</td><td>全端</td><td><span class="tag tag-mvp">MVP</span></td></tr>
+          <tr><td>群聊卡片</td><td>群头像、群名、成员数、进入群聊</td><td>全端</td><td><span class="tag tag-mvp">MVP</span></td></tr>
+          <tr><td>添加好友</td><td>点击「添加好友」→ 调接口 → 按钮变灰「已发送」</td><td>全端</td><td><span class="tag tag-mvp">MVP</span></td></tr>
+          <!-- 审批通知、审批结果 → Phase 2 -->
+          <tr><td>群成员名片拦截</td><td>群聊中点击 AI 头像 → 弹名片（研发逻辑调整，无新 UI）</td><td>全端</td><td><span class="tag tag-mvp">#105</span></td></tr>
+          <tr><td>搜索名片拦截</td><td>搜索非好友 AI → 弹名片（研发逻辑调整，无新 UI）</td><td>全端</td><td><span class="tag tag-mvp">#106</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ────── SECTION: Web Contacts (Interactive Demo) ────── -->
+  <div id="web-contacts" class="doc-section">
+    <div class="section-header">
+      <h1>Web — 通讯录交互 Demo</h1>
+      <p class="subtitle">可直接操作：展开/收起分类、搜索过滤、筛选标签、点击切换右侧名片</p>
+    </div>
+
+    <div class="content-card">
+      <h2>交互说明</h2>
+      <ul>
+        <li>点击分类标题 → 展开/收起子列表</li>
+        <li>点击搜索框输入文字 → 列表实时过滤（按「联系人」「群聊」分组）</li>
+        <li>展开「全部联系人」后点击筛选标签 → 只看 AI / 只看人类 / 全部</li>
+        <li>点击任意联系人/AI/群聊 → 右侧面板切换对应名片</li>
+        <li>Bot 名片点「添加好友」→ 按钮变灰「已发送」</li>
+      </ul>
+    </div>
+
+    <div class="content-card" style="padding: var(--sp-4);">
+      <!-- Web Frame Mockup — Interactive -->
+      <div class="web-frame">
+        <div class="web-frame-bar">
+          <div class="web-frame-dot r"></div>
+          <div class="web-frame-dot y"></div>
+          <div class="web-frame-dot g"></div>
+        </div>
+        <div class="web-frame-body">
+          <!-- Nav Rail -->
+          <div class="mock-nav-rail">
+            <div class="mock-nav-btn" title="聊天">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            </div>
+            <div class="mock-nav-btn active" title="通讯录">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+          </div>
+
+          <!-- Sidebar -->
+          <div class="mock-sidebar" id="demo-sidebar">
+            <div class="mock-sidebar-header">
+              <span class="mock-sidebar-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                通讯录
+              </span>
+            </div>
+
+            <!-- BotFather Banner -->
+            <div style="padding: var(--sp-3) var(--sp-4) 0;">
+              <div class="botfather-banner" style="margin: 0; padding: var(--sp-2) var(--sp-3);">
+                <div class="botfather-icon" style="width: 28px; height: 28px;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09"/></svg>
+                </div>
+                <div>
+                  <div class="botfather-name" style="font-size: 13px;">BotFather</div>
+                  <div class="botfather-desc">创建和管理你的 AI 机器人</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Search -->
+            <div style="margin: var(--sp-2) var(--sp-4) var(--sp-2); position: relative;">
+              <input type="text" id="demo-search" placeholder="搜索通讯录" oninput="demoSearch(this.value)" style="
+                width: 100%; padding: var(--sp-2) var(--sp-3) var(--sp-2) 30px;
+                background: var(--bg-elevated); border: 1.5px solid transparent;
+                border-radius: var(--r-md); font: var(--text-caption);
+                color: var(--text-primary); outline: none;
+                transition: border-color var(--dur);
+              " onfocus="this.style.borderColor='var(--brand-primary)'" onblur="this.style.borderColor='transparent'">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="1.8" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); pointer-events: none;"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            </div>
+
+            <!-- Category List -->
+            <div class="category-list" id="demo-categories">
+              <!-- 群聊 -->
+              <div class="category-item" data-cat="groups">
+                <div class="category-header" onclick="toggleCategory(this)">
+                  <div class="category-icon">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                  </div>
+                  <span class="category-label">群聊</span>
+                  <span class="category-count">2</span>
+                  <span class="category-arrow">›</span>
+                </div>
+                <div class="category-content">
+                  <div class="contact-item" data-type="group" data-id="group-1" onclick="selectContact(this)">
+                    <div class="avatar avatar-xs avatar-group" style="background: linear-gradient(135deg, #6366F1, #8B5CF6);">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                    </div>
+                    <span class="contact-name">产品研发组 <span class="badge-group">群</span></span>
+                  </div>
+                  <div class="contact-item" data-type="group" data-id="group-2" onclick="selectContact(this)">
+                    <div class="avatar avatar-xs avatar-group" style="background: linear-gradient(135deg, #0EA5E9, #06B6D4);">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                    </div>
+                    <span class="contact-name">设计评审群 <span class="badge-group">群</span></span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 已添加 AI -->
+              <div class="category-item" data-cat="my-ai">
+                <div class="category-header" onclick="toggleCategory(this)">
+                  <div class="category-icon">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M7 20h10"/><path d="M9 16v4"/><path d="M15 16v4"/><circle cx="9" cy="10" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="10" r="1" fill="currentColor" stroke="none"/></svg>
+                  </div>
+                  <span class="category-label">已添加 AI</span>
+                  <span class="category-count">2</span>
+                  <span class="category-arrow">›</span>
+                </div>
+                <div class="category-content">
+                  <div class="contact-item" data-type="ai-friend" data-id="ai-abai" onclick="selectContact(this)">
+                    <div class="avatar avatar-xs avatar-ai" style="background: linear-gradient(135deg, #7C5CFC, #5C9AFF);">阿</div>
+                    <span class="contact-name">阿白 <span class="badge-ai">AI</span></span>
+                  </div>
+                  <div class="contact-item" data-type="ai-friend" data-id="ai-xiaomiao" onclick="selectContact(this)">
+                    <div class="avatar avatar-xs avatar-ai" style="background: linear-gradient(135deg, #EC4899, #F59E0B);">小</div>
+                    <span class="contact-name">小苗 <span class="badge-ai">AI</span></span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 全部联系人 -->
+              <div class="category-item expanded" data-cat="all">
+                <div class="category-header" onclick="toggleCategory(this)">
+                  <div class="category-icon">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                  </div>
+                  <span class="category-label">全部联系人</span>
+                  <span class="category-count">6</span>
+                  <span class="category-arrow">›</span>
+                </div>
+                <div class="category-content">
+                  <div class="filter-chips" id="demo-filters">
+                    <span class="filter-chip active" onclick="demoFilter('all', this)">全部</span>
+                    <span class="filter-chip" onclick="demoFilter('ai', this)">只看 AI</span>
+                    <span class="filter-chip" onclick="demoFilter('human', this)">只看人类</span>
+                  </div>
+                  <div id="demo-all-contacts">
+                    <div class="contact-letter" data-letter="A">A</div>
+                    <div class="contact-item" data-type="ai-friend" data-id="ai-abai" data-filter="ai" data-name="阿白" data-letter="A" onclick="selectContact(this)">
+                      <div class="avatar avatar-xs avatar-ai" style="background: linear-gradient(135deg, #7C5CFC, #5C9AFF);">阿</div>
+                      <span class="contact-name">阿白 <span class="badge-ai">AI</span></span>
+                    </div>
+                    <div class="contact-letter" data-letter="J">J</div>
+                    <div class="contact-item" data-type="human" data-id="human-jojo" data-filter="human" data-name="JOJO" data-letter="J" onclick="selectContact(this)">
+                      <div class="avatar avatar-xs avatar-human" style="background: #6366F1;">J</div>
+                      <span class="contact-name">JOJO</span>
+                    </div>
+                    <div class="contact-letter" data-letter="L">L</div>
+                    <div class="contact-item" data-type="human" data-id="human-lisi" data-filter="human" data-name="李四" data-letter="L" onclick="selectContact(this)">
+                      <div class="avatar avatar-xs avatar-human" style="background: #EF4444;">李</div>
+                      <span class="contact-name">李四</span>
+                    </div>
+                    <div class="contact-letter" data-letter="T">T</div>
+                    <div class="contact-item" data-type="ai-nonfriend" data-id="ai-thomas" data-filter="ai" data-name="Thomas" data-letter="T" onclick="selectContact(this)">
+                      <div class="avatar avatar-xs avatar-ai" style="background: linear-gradient(135deg, #F59E0B, #EF4444);">T</div>
+                      <span class="contact-name">Thomas <span class="badge-ai">AI</span></span>
+                    </div>
+                    <div class="contact-letter" data-letter="W">W</div>
+                    <div class="contact-item" data-type="human" data-id="human-wangwu" data-filter="human" data-name="王五" data-letter="W" onclick="selectContact(this)">
+                      <div class="avatar avatar-xs avatar-human" style="background: #10B981;">王</div>
+                      <span class="contact-name">王五</span>
+                    </div>
+                    <div class="contact-letter" data-letter="Z">Z</div>
+                    <div class="contact-item" data-type="human" data-id="human-zhangsan" data-filter="human" data-name="张三" data-letter="Z" onclick="selectContact(this)">
+                      <div class="avatar avatar-xs avatar-human" style="background: #F59E0B;">张</div>
+                      <span class="contact-name">张三</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Search results (hidden by default) -->
+            <div id="demo-search-results" style="display: none; flex: 1; overflow-y: auto; padding: 0 var(--sp-4);">
+            </div>
+          </div>
+
+          <!-- Detail Panel -->
+          <div class="mock-detail" id="demo-detail">
+            <div class="mock-detail-empty">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="1" style="opacity: 0.4; margin-bottom: var(--sp-3);"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+              <div>选择联系人查看名片</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card specs (compact reference, not separate pages) -->
+    <div class="content-card">
+      <h2>名片规格</h2>
+
+      <h3>人的名片</h3>
+      <ul>
+        <li>圆形头像 + 名字 + DMWork号</li>
+        <li>菜单：设置备注 / 解除好友（红色，二次确认弹窗）/ 拉入黑名单（红色，二次确认弹窗）/ 来源</li>
+        <li>按钮：发送消息（Primary 青绿）</li>
+      </ul>
+
+      <h3>Bot 名片（两态）</h3>
+      <table>
+        <thead><tr><th>关系</th><th>按钮</th><th>点击后</th><th>样式</th></tr></thead>
+        <tbody>
+          <tr><td>无好友关系</td><td>添加好友</td><td>按钮本地变灰「已发送」</td><td>Primary → Disabled</td></tr>
+          <tr><td>已是好友</td><td>发消息</td><td>进入聊天</td><td>Primary 青绿</td></tr>
+          <tr><td>Owner</td><td>发消息</td><td>进入聊天</td><td>Primary 青绿</td></tr>
+        </tbody>
+      </table>
+      <div class="design-note">
+        🎨 Phase 1 只有两态。非好友点「添加好友」后按钮本地变灰显示「已发送」（刷新恢复）。审批中持久化和解除好友在 Phase 2。
+      </div>
+
+      <h3>群聊卡片</h3>
+      <ul>
+        <li>大圆角方形头像 + 群名 + 成员数</li>
+        <li>按钮：进入群聊（Primary 青绿）</li>
+      </ul>
+    </div>
+
+    <!-- Sorting & empty states -->
+    <div class="content-card">
+      <h2>排序与空态</h2>
+
+      <h3>排序规则</h3>
+      <ul>
+        <li>中文按拼音首字母，英文按字母，同一字母下不区分中英</li>
+      </ul>
+
+      <h3>空态文案</h3>
+      <table>
+        <thead><tr><th>分类</th><th>空态文案</th></tr></thead>
+        <tbody>
+          <tr><td>群聊</td><td>暂无群聊</td></tr>
+          <tr><td>已添加 AI</td><td>还没有添加 AI 好友（引导：去全部联系人中添加 →）</td></tr>
+          <tr><td>全部联系人</td><td>暂无联系人</td></tr>
+          <tr><td>搜索无结果</td><td>没有找到匹配的结果</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ────── SECTION: Mobile Contacts (Interactive Demo) ────── -->
+  <div id="mobile-contacts" class="doc-section">
+    <div class="section-header">
+      <h1>移动端 — 交互 Demo</h1>
+      <p class="subtitle">点击联系人弹出底部 Sheet 名片，点击分类展开/收起</p>
+    </div>
+
+    <div class="content-card">
+      <h2>与 Web 端差异</h2>
+      <table>
+        <thead><tr><th>维度</th><th>Web</th><th>移动端</th></tr></thead>
+        <tbody>
+          <tr><td>布局</td><td>Sidebar + 右侧面板</td><td>全屏列表 + 底部 Sheet</td></tr>
+          <tr><td>全部联系人</td><td>可展开分类</td><td>直接平铺</td></tr>
+          <tr><td>背景</td><td>--bg-base</td><td>--bg-deep</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="content-card" style="padding: var(--sp-4); display: flex; justify-content: center;">
+      <!-- Mobile Frame — Interactive -->
+      <div class="mobile-frame" id="mobile-demo">
+        <div class="status-bar">9:41</div>
+
+        <!-- Content area -->
+        <div id="mobile-content" style="height: calc(100% - 44px - 83px); overflow-y: auto; background: var(--bg-deep);">
+          <!-- Header -->
+          <div style="padding: var(--sp-4) var(--sp-5) 0;">
+            <div style="font: var(--text-h2); margin-bottom: var(--sp-2);">通讯录</div>
+          </div>
+
+          <!-- BotFather -->
+          <div style="padding: 0 var(--sp-4) var(--sp-2);">
+            <div class="botfather-banner" style="margin: 0; padding: var(--sp-2) var(--sp-3);">
+              <div class="botfather-icon" style="width: 24px; height: 24px;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83"/></svg>
+              </div>
+              <div>
+                <div class="botfather-name" style="font-size: 12px;">BotFather</div>
+                <div class="botfather-desc" style="font-size: 10px;">创建和管理你的 AI</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Search -->
+          <div style="margin: 0 var(--sp-4) var(--sp-2); position: relative;">
+            <input type="text" id="mobile-search" placeholder="搜索" oninput="mobileSearch(this.value)" style="
+              width: 100%; padding: var(--sp-2) var(--sp-3) var(--sp-2) 28px;
+              background: var(--bg-elevated); border: 1.5px solid transparent;
+              border-radius: var(--r-md); font: var(--text-caption);
+              color: var(--text-primary); outline: none;
+            " onfocus="this.style.borderColor='var(--brand-primary)'" onblur="this.style.borderColor='transparent'">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="1.8" style="position: absolute; left: 9px; top: 50%; transform: translateY(-50%); pointer-events: none;"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          </div>
+
+          <!-- Categories (expandable) -->
+          <div id="mobile-categories">
+            <!-- 群聊 -->
+            <div class="m-cat" data-cat="m-groups">
+              <div style="display: flex; align-items: center; gap: var(--sp-2); padding: var(--sp-2) var(--sp-5); border-bottom: 1px solid var(--border-subtle); cursor: pointer;" onclick="mToggleCat(this)">
+                <div style="width: 28px; height: 28px; border-radius: var(--r-sm); background: var(--bg-elevated); display: flex; align-items: center; justify-content: center;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>
+                </div>
+                <span style="flex: 1; font: var(--text-body); font-weight: 500;">群聊</span>
+                <span style="font: var(--text-caption); color: var(--text-tertiary);">2</span>
+                <span class="m-arrow" style="color: var(--text-tertiary); font-size: 12px; transition: transform var(--dur);">›</span>
+              </div>
+              <div class="m-cat-content" style="display: none; background: var(--bg-surface);">
+                <div class="contact-item" style="padding: var(--sp-2) var(--sp-5);" onclick="mShowSheet('m-group-1')">
+                  <div class="avatar avatar-sm avatar-group" style="background: linear-gradient(135deg, #6366F1, #8B5CF6);">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                  </div>
+                  <span class="contact-name">产品研发组 <span class="badge-group">群</span></span>
+                </div>
+                <div class="contact-item" style="padding: var(--sp-2) var(--sp-5);" onclick="mShowSheet('m-group-2')">
+                  <div class="avatar avatar-sm avatar-group" style="background: linear-gradient(135deg, #0EA5E9, #06B6D4);">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                  </div>
+                  <span class="contact-name">设计评审群 <span class="badge-group">群</span></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 已添加 AI -->
+            <div class="m-cat" data-cat="m-ai">
+              <div style="display: flex; align-items: center; gap: var(--sp-2); padding: var(--sp-2) var(--sp-5); border-bottom: 1px solid var(--border-subtle); cursor: pointer;" onclick="mToggleCat(this)">
+                <div style="width: 28px; height: 28px; border-radius: var(--r-sm); background: var(--bg-elevated); display: flex; align-items: center; justify-content: center;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="1.8"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M7 20h10"/><path d="M9 16v4"/><path d="M15 16v4"/></svg>
+                </div>
+                <span style="flex: 1; font: var(--text-body); font-weight: 500;">已添加 AI</span>
+                <span style="font: var(--text-caption); color: var(--text-tertiary);">2</span>
+                <span class="m-arrow" style="color: var(--text-tertiary); font-size: 12px; transition: transform var(--dur);">›</span>
+              </div>
+              <div class="m-cat-content" style="display: none; background: var(--bg-surface);">
+                <div class="contact-item" style="padding: var(--sp-2) var(--sp-5);" onclick="mShowSheet('m-ai-abai')">
+                  <div class="avatar avatar-sm avatar-ai" style="background: linear-gradient(135deg, #7C5CFC, #5C9AFF);">阿</div>
+                  <span class="contact-name">阿白 <span class="badge-ai">AI</span></span>
+                </div>
+                <div class="contact-item" style="padding: var(--sp-2) var(--sp-5);" onclick="mShowSheet('m-ai-xiaomiao')">
+                  <div class="avatar avatar-sm avatar-ai" style="background: linear-gradient(135deg, #EC4899, #F59E0B);">小</div>
+                  <span class="contact-name">小苗 <span class="badge-ai">AI</span></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 全部联系人 (flat, always visible) -->
+          <div style="padding: var(--sp-3) var(--sp-5) 0; font: var(--text-caption); font-weight: 500; color: var(--text-tertiary);">全部联系人</div>
+          <div id="mobile-flat-list">
+            <div class="contact-letter" style="background: var(--bg-deep);">A</div>
+            <div class="contact-item" style="padding: var(--sp-2) var(--sp-5);" onclick="mShowSheet('m-ai-abai')">
+              <div class="avatar avatar-sm avatar-ai" style="background: linear-gradient(135deg, #7C5CFC, #5C9AFF);">阿</div>
+              <span class="contact-name">阿白 <span class="badge-ai">AI</span></span>
+            </div>
+            <div class="contact-letter" style="background: var(--bg-deep);">J</div>
+            <div class="contact-item" style="padding: var(--sp-2) var(--sp-5);" onclick="mShowSheet('m-human-jojo')">
+              <div class="avatar avatar-sm avatar-human" style="background: #6366F1;">J</div>
+              <span class="contact-name">JOJO</span>
+            </div>
+            <div class="contact-letter" style="background: var(--bg-deep);">T</div>
+            <div class="contact-item" style="padding: var(--sp-2) var(--sp-5);" onclick="mShowSheet('m-ai-thomas')">
+              <div class="avatar avatar-sm avatar-ai" style="background: linear-gradient(135deg, #F59E0B, #EF4444);">T</div>
+              <span class="contact-name">Thomas <span class="badge-ai">AI</span></span>
+            </div>
+            <div class="contact-letter" style="background: var(--bg-deep);">W</div>
+            <div class="contact-item" style="padding: var(--sp-2) var(--sp-5);" onclick="mShowSheet('m-human-wangwu')">
+              <div class="avatar avatar-sm avatar-human" style="background: #10B981;">王</div>
+              <span class="contact-name">王五</span>
+            </div>
+            <div class="contact-letter" style="background: var(--bg-deep);">Z</div>
+            <div class="contact-item" style="padding: var(--sp-2) var(--sp-5);" onclick="mShowSheet('m-human-zhangsan')">
+              <div class="avatar avatar-sm avatar-human" style="background: #F59E0B;">张</div>
+              <span class="contact-name">张三</span>
+            </div>
+          </div>
+
+          <!-- Mobile search results (hidden) -->
+          <div id="mobile-search-results" style="display: none; padding: 0 var(--sp-4);"></div>
+        </div>
+
+        <!-- Bottom Sheet (hidden by default) -->
+        <div id="mobile-sheet-overlay" style="display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.3); z-index: 10;" onclick="mHideSheet()"></div>
+        <div id="mobile-sheet" class="mobile-sheet" style="display: none; z-index: 11;">
+          <div class="mobile-sheet-handle"></div>
+          <div id="mobile-sheet-content"></div>
+        </div>
+
+        <!-- Bottom Nav -->
+        <div class="mobile-nav-bar">
+          <div class="mobile-nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <span>聊天</span>
+          </div>
+          <div class="mobile-nav-item active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+            <span>通讯录</span>
+          </div>
+          <div class="mobile-nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l2 2"/></svg>
+            <span>我的</span>
+          </div>
+        </div>
+        <div class="home-indicator"></div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ────── SECTION: Spec ────── -->
+  <div id="spec" class="doc-section">
+    <div class="section-header">
+      <h1>设计规格</h1>
+      <p class="subtitle">开发交付用的标注参考</p>
+    </div>
+
+    <div class="content-card">
+      <h2>头像尺寸</h2>
+      <table>
+        <thead><tr><th>场景</th><th>尺寸</th><th>类名</th></tr></thead>
+        <tbody>
+          <tr><td>列表项（Web Sidebar）</td><td>36 × 36px</td><td>avatar-sm</td></tr>
+          <tr><td>列表项（移动端）</td><td>40 × 40px</td><td>avatar-md</td></tr>
+          <tr><td>名片头部</td><td>72 × 72px</td><td>avatar-xl</td></tr>
+          <tr><td>申请表单目标</td><td>36 × 36px</td><td>avatar-sm</td></tr>
+          <tr><td>审批卡片</td><td>36 × 36px</td><td>avatar-sm</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="content-card">
+      <h2>头像形状规则</h2>
+      <table>
+        <thead><tr><th>类型</th><th>border-radius</th><th>背景</th><th>角标</th></tr></thead>
+        <tbody>
+          <tr><td>人类</td><td>50% (圆形)</td><td>纯色</td><td>无</td></tr>
+          <tr><td>Bot/AI</td><td>var(--r-sm) = 6px</td><td>渐变色</td><td>无（靠形状+渐变区分）</td></tr>
+          <tr><td>群组</td><td>var(--r-md) = 10px</td><td>渐变色</td><td>无</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="content-card">
+      <h2>按钮色彩</h2>
+      <table>
+        <thead><tr><th>用途</th><th>色值</th><th>示例</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>主按钮（人的操作）</td>
+            <td>#008F76 青绿</td>
+            <td><button class="btn btn-primary" style="padding: var(--sp-1) var(--sp-3); font-size: 12px;">发消息</button></td>
+          </tr>
+          <tr>
+            <td>危险操作</td>
+            <td>#D32F2F 红色</td>
+            <td><button class="btn btn-danger" style="padding: var(--sp-1) var(--sp-3); font-size: 12px;">确认解除</button></td>
+          </tr>
+          <tr>
+            <td>次要 / 取消</td>
+            <td>bg-elevated</td>
+            <td><button class="btn btn-secondary" style="padding: var(--sp-1) var(--sp-3); font-size: 12px;">取消</button></td>
+          </tr>
+          <tr>
+            <td>禁用</td>
+            <td>bg-elevated + 0.6 opacity</td>
+            <td><button class="btn btn-disabled" style="padding: var(--sp-1) var(--sp-3); font-size: 12px;">审批中</button></td>
+          </tr>
+          <tr>
+            <td>审批通过</td>
+            <td>var(--green) 绿色</td>
+            <td><button class="btn" style="padding: var(--sp-1) var(--sp-3); font-size: 12px; background: var(--green); color: #fff;">通过</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="content-card">
+      <h2>间距参考</h2>
+      <table>
+        <thead><tr><th>位置</th><th>间距</th></tr></thead>
+        <tbody>
+          <tr><td>Sidebar padding</td><td>sp-4 (16px)</td></tr>
+          <tr><td>列表项 padding</td><td>Web: sp-2 sp-4 / 移动端: sp-3 sp-5</td></tr>
+          <tr><td>名片 section 间距</td><td>sp-4 (16px)</td></tr>
+          <tr><td>按钮 padding</td><td>sp-2 sp-5 (8px 20px)</td></tr>
+          <tr><td>筛选下拉间距</td><td>sp-3 sp-4 (12px 16px) wrap padding</td></tr>
+          <tr><td>BotFather 横幅 margin</td><td>sp-3 (12px)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="content-card">
+      <h2>边界条件</h2>
+      <ul>
+        <li><strong>无联系人</strong> — 列表为空时显示空态插图 + 「暂无联系人」</li>
+        <li><strong>搜索无结果</strong> — 显示「未找到匹配结果」</li>
+        <li><strong>网络错误</strong> — 显示重试按钮</li>
+        <li><strong>添加好友已发送</strong> — 按钮本地变灰「已发送」（刷新恢复，Phase 2 做持久化）</li>
+        <li><strong>长名字截断</strong> — 单行省略，不换行</li>
+        <li><strong>#105 群聊成员拦截</strong> — 群聊成员列表点非好友 AI → 弹名片而非直接聊天（研发逻辑调整，无新 UI）</li>
+        <li><strong>#106 搜索拦截</strong> — 搜索结果点非好友 AI → 弹名片而非直接聊天（同上）</li>
+      </ul>
+    </div>
+
+    <div class="content-card">
+      <h2>术语定义</h2>
+      <table>
+        <thead><tr><th>术语</th><th>定义</th></tr></thead>
+        <tbody>
+          <tr><td>Bot</td><td>AI 机器人（龙虾 / Lobster），拥有 Owner</td></tr>
+          <tr><td>Owner</td><td>Bot 的创建者/拥有者，有审批权</td></tr>
+          <tr><td>BotFather</td><td>系统级 Bot 管理入口，发送审批通知的角色</td></tr>
+          <tr><td>好友关系</td><td>用户需向 Owner 申请才能与 Bot 建立好友关系</td></tr>
+          <tr><td>名片拦截</td><td>点击非好友 AI 时先弹名片，而非直接进入聊天</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+</main>
+
+<script>
+function showSection(id) {
+  document.querySelectorAll('.doc-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.doc-nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelector(`[data-section="${id}"]`).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function toggleTheme() {
+  const html = document.documentElement;
+  html.dataset.theme = html.dataset.theme === 'dark' ? 'light' : 'dark';
+}
+</script>
+
+<!-- Interactive Demo JS -->
+<script>
+// ═══ Card Data ═══
+const cardData = {
+  'group-1': {
+    type: 'group',
+    html: `<div class="profile-card">
+      <div class="profile-card-header">
+        <div class="avatar avatar-lg avatar-group" style="background: linear-gradient(135deg, #6366F1, #8B5CF6);">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </div>
+        <div class="profile-card-name">产品研发组</div>
+        <div class="profile-card-sub">6 位成员</div>
+      </div>
+      <div class="profile-card-actions"><button class="btn btn-primary">进入群聊</button></div>
+    </div>`
+  },
+  'group-2': {
+    type: 'group',
+    html: `<div class="profile-card">
+      <div class="profile-card-header">
+        <div class="avatar avatar-lg avatar-group" style="background: linear-gradient(135deg, #0EA5E9, #06B6D4);">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </div>
+        <div class="profile-card-name">设计评审群</div>
+        <div class="profile-card-sub">4 位成员</div>
+      </div>
+      <div class="profile-card-actions"><button class="btn btn-primary">进入群聊</button></div>
+    </div>`
+  },
+  'ai-abai': {
+    type: 'ai-friend',
+    html: `<div class="profile-card">
+      <div class="profile-card-header">
+        <div class="avatar avatar-lg avatar-ai" style="background: linear-gradient(135deg, #7C5CFC, #5C9AFF);">阿</div>
+        <div class="profile-card-name">阿白 <span class="badge-ai">AI</span></div>
+        <div class="profile-card-sub">@abai_bot</div>
+      </div>
+      <div class="profile-card-info">
+        <div class="profile-card-row"><span class="profile-card-label">简介</span><span class="profile-card-value">智能助手，帮你处理日常工作</span></div>
+        <div class="profile-card-row"><span class="profile-card-label">创建者</span><span class="profile-card-value">张三</span></div>
+      </div>
+      <div class="profile-card-actions"><button class="btn btn-primary">发消息</button></div>
+    </div>`
+  },
+  'ai-xiaomiao': {
+    type: 'ai-friend',
+    html: `<div class="profile-card">
+      <div class="profile-card-header">
+        <div class="avatar avatar-lg avatar-ai" style="background: linear-gradient(135deg, #EC4899, #F59E0B);">小</div>
+        <div class="profile-card-name">小苗 <span class="badge-ai">AI</span></div>
+        <div class="profile-card-sub">@xiaomiao_bot</div>
+      </div>
+      <div class="profile-card-info">
+        <div class="profile-card-row"><span class="profile-card-label">简介</span><span class="profile-card-value">你的创意写作伙伴</span></div>
+        <div class="profile-card-row"><span class="profile-card-label">创建者</span><span class="profile-card-value">lejun</span></div>
+      </div>
+      <div class="profile-card-actions"><button class="btn btn-primary">发消息</button></div>
+    </div>`
+  },
+  'ai-thomas': {
+    type: 'ai-nonfriend',
+    html: `<div class="profile-card">
+      <div class="profile-card-header">
+        <div class="avatar avatar-lg avatar-ai" style="background: linear-gradient(135deg, #F59E0B, #EF4444);">T</div>
+        <div class="profile-card-name">Thomas <span class="badge-ai">AI</span></div>
+        <div class="profile-card-sub">@thomas_bot</div>
+      </div>
+      <div class="profile-card-info">
+        <div class="profile-card-row"><span class="profile-card-label">简介</span><span class="profile-card-value">数据分析助手</span></div>
+        <div class="profile-card-row"><span class="profile-card-label">创建者</span><span class="profile-card-value">李四</span></div>
+      </div>
+      <div class="profile-card-actions"><button class="btn btn-primary" id="btn-add-thomas" onclick="addFriend(this)">添加好友</button></div>
+    </div>`
+  },
+  'human-jojo': {
+    type: 'human',
+    html: `<div class="profile-card">
+      <div class="profile-card-header">
+        <div class="avatar avatar-lg avatar-human" style="background: #6366F1;">J</div>
+        <div class="profile-card-name">JOJO</div>
+        <div class="profile-card-sub">DMWork号：jojo_design</div>
+      </div>
+      <div class="profile-menu">
+        <div class="profile-menu-item">设置备注 <span class="chevron">›</span></div>
+        <div class="profile-menu-item danger">解除好友关系 <span class="chevron">›</span></div>
+        <div class="profile-menu-item danger">拉入黑名单 <span class="chevron">›</span></div>
+        <div class="profile-menu-item">来源 <span class="chevron">›</span></div>
+      </div>
+      <div class="profile-card-actions"><button class="btn btn-primary">发送消息</button></div>
+    </div>`
+  },
+  'human-lisi': {
+    type: 'human',
+    html: `<div class="profile-card">
+      <div class="profile-card-header">
+        <div class="avatar avatar-lg avatar-human" style="background: #EF4444;">李</div>
+        <div class="profile-card-name">李四</div>
+        <div class="profile-card-sub">DMWork号：lisi_dev</div>
+      </div>
+      <div class="profile-menu">
+        <div class="profile-menu-item">设置备注 <span class="chevron">›</span></div>
+        <div class="profile-menu-item danger">解除好友关系 <span class="chevron">›</span></div>
+        <div class="profile-menu-item danger">拉入黑名单 <span class="chevron">›</span></div>
+        <div class="profile-menu-item">来源 <span class="chevron">›</span></div>
+      </div>
+      <div class="profile-card-actions"><button class="btn btn-primary">发送消息</button></div>
+    </div>`
+  },
+  'human-wangwu': {
+    type: 'human',
+    html: `<div class="profile-card">
+      <div class="profile-card-header">
+        <div class="avatar avatar-lg avatar-human" style="background: #10B981;">王</div>
+        <div class="profile-card-name">王五</div>
+        <div class="profile-card-sub">DMWork号：wangwu</div>
+      </div>
+      <div class="profile-menu">
+        <div class="profile-menu-item">设置备注 <span class="chevron">›</span></div>
+        <div class="profile-menu-item danger">解除好友关系 <span class="chevron">›</span></div>
+        <div class="profile-menu-item danger">拉入黑名单 <span class="chevron">›</span></div>
+        <div class="profile-menu-item">来源 <span class="chevron">›</span></div>
+      </div>
+      <div class="profile-card-actions"><button class="btn btn-primary">发送消息</button></div>
+    </div>`
+  },
+  'human-zhangsan': {
+    type: 'human',
+    html: `<div class="profile-card">
+      <div class="profile-card-header">
+        <div class="avatar avatar-lg avatar-human" style="background: #F59E0B;">张</div>
+        <div class="profile-card-name">张三</div>
+        <div class="profile-card-sub">DMWork号：zhangsan</div>
+      </div>
+      <div class="profile-menu">
+        <div class="profile-menu-item">设置备注 <span class="chevron">›</span></div>
+        <div class="profile-menu-item danger">解除好友关系 <span class="chevron">›</span></div>
+        <div class="profile-menu-item danger">拉入黑名单 <span class="chevron">›</span></div>
+        <div class="profile-menu-item">来源 <span class="chevron">›</span></div>
+      </div>
+      <div class="profile-card-actions"><button class="btn btn-primary">发送消息</button></div>
+    </div>`
+  }
+};
+
+// ═══ Category toggle ═══
+function toggleCategory(header) {
+  header.parentElement.classList.toggle('expanded');
+}
+
+// ═══ Select contact → update right panel ═══
+function selectContact(el) {
+  // Remove all active states
+  document.querySelectorAll('#demo-sidebar .contact-item').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+
+  const id = el.dataset.id;
+  const detail = document.getElementById('demo-detail');
+  if (cardData[id]) {
+    detail.innerHTML = cardData[id].html;
+  }
+}
+
+// ═══ Add friend button ═══
+function addFriend(btn) {
+  btn.className = 'btn btn-disabled';
+  btn.textContent = '已发送';
+  btn.onclick = null;
+}
+
+// ═══ Filter chips ═══
+function demoFilter(type, chip) {
+  // Update active chip
+  document.querySelectorAll('#demo-filters .filter-chip').forEach(c => c.classList.remove('active'));
+  chip.classList.add('active');
+
+  // Filter contacts
+  const contacts = document.querySelectorAll('#demo-all-contacts .contact-item');
+  const letters = document.querySelectorAll('#demo-all-contacts .contact-letter');
+
+  contacts.forEach(c => {
+    if (type === 'all') { c.style.display = ''; return; }
+    c.style.display = c.dataset.filter === type ? '' : 'none';
+  });
+
+  // Show/hide letter headers based on visible contacts
+  letters.forEach(l => {
+    const letter = l.dataset.letter;
+    const hasVisible = Array.from(contacts).some(c =>
+      c.dataset.letter === letter && c.style.display !== 'none'
+    );
+    l.style.display = hasVisible ? '' : 'none';
+  });
+}
+
+// ═══ Search ═══
+function demoSearch(query) {
+  const categories = document.getElementById('demo-categories');
+  const searchResults = document.getElementById('demo-search-results');
+  const q = query.trim().toLowerCase();
+
+  if (!q) {
+    categories.style.display = '';
+    searchResults.style.display = 'none';
+    return;
+  }
+
+  categories.style.display = 'none';
+  searchResults.style.display = 'block';
+
+  // Collect all searchable items
+  const allItems = [
+    { name: '阿白', type: 'ai', id: 'ai-abai', avatar: '<div class="avatar" style="width:28px;height:28px;border-radius:var(--r-sm);background:linear-gradient(135deg,#7C5CFC,#5C9AFF);font-size:11px;display:flex;align-items:center;justify-content:center;color:#fff;">阿</div>', badge: '<span class="badge-ai" style="font-size:9px;">AI</span>', sub: '已添加', group: '联系人' },
+    { name: '小苗', type: 'ai', id: 'ai-xiaomiao', avatar: '<div class="avatar" style="width:28px;height:28px;border-radius:var(--r-sm);background:linear-gradient(135deg,#EC4899,#F59E0B);font-size:11px;display:flex;align-items:center;justify-content:center;color:#fff;">小</div>', badge: '<span class="badge-ai" style="font-size:9px;">AI</span>', sub: '已添加', group: '联系人' },
+    { name: 'Thomas', type: 'ai', id: 'ai-thomas', avatar: '<div class="avatar" style="width:28px;height:28px;border-radius:var(--r-sm);background:linear-gradient(135deg,#F59E0B,#EF4444);font-size:11px;display:flex;align-items:center;justify-content:center;color:#fff;">T</div>', badge: '<span class="badge-ai" style="font-size:9px;">AI</span>', sub: '未添加', group: '联系人' },
+    { name: 'JOJO', type: 'human', id: 'human-jojo', avatar: '<div class="avatar" style="width:28px;height:28px;border-radius:50%;background:#6366F1;font-size:11px;display:flex;align-items:center;justify-content:center;color:#fff;">J</div>', badge: '', sub: '', group: '联系人' },
+    { name: '李四', type: 'human', id: 'human-lisi', avatar: '<div class="avatar" style="width:28px;height:28px;border-radius:50%;background:#EF4444;font-size:11px;display:flex;align-items:center;justify-content:center;color:#fff;">李</div>', badge: '', sub: '', group: '联系人' },
+    { name: '王五', type: 'human', id: 'human-wangwu', avatar: '<div class="avatar" style="width:28px;height:28px;border-radius:50%;background:#10B981;font-size:11px;display:flex;align-items:center;justify-content:center;color:#fff;">王</div>', badge: '', sub: '', group: '联系人' },
+    { name: '张三', type: 'human', id: 'human-zhangsan', avatar: '<div class="avatar" style="width:28px;height:28px;border-radius:50%;background:#F59E0B;font-size:11px;display:flex;align-items:center;justify-content:center;color:#fff;">张</div>', badge: '', sub: '', group: '联系人' },
+    { name: '产品研发组', type: 'group', id: 'group-1', avatar: '<div class="avatar" style="width:28px;height:28px;border-radius:var(--r-md);background:#6366F1;font-size:11px;display:flex;align-items:center;justify-content:center;color:#fff;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div>', badge: '', sub: '6 位成员', group: '群聊' },
+    { name: '设计评审群', type: 'group', id: 'group-2', avatar: '<div class="avatar" style="width:28px;height:28px;border-radius:var(--r-md);background:#0EA5E9;font-size:11px;display:flex;align-items:center;justify-content:center;color:#fff;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div>', badge: '', sub: '4 位成员', group: '群聊' },
+  ];
+
+  const matched = allItems.filter(i => i.name.toLowerCase().includes(q));
+  const contactResults = matched.filter(i => i.group === '联系人');
+  const groupResults = matched.filter(i => i.group === '群聊');
+
+  if (matched.length === 0) {
+    searchResults.innerHTML = `
+      <div style="text-align:center;padding:var(--sp-10) var(--sp-4);">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="1.2" style="opacity:0.5;margin-bottom:var(--sp-3);"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <div style="font:var(--text-body);color:var(--text-secondary);">没有找到匹配的结果</div>
+        <div style="font:var(--text-caption);color:var(--text-tertiary);margin-top:var(--sp-1);">试试其他关键词</div>
+      </div>`;
+    return;
+  }
+
+  let html = '';
+  if (contactResults.length) {
+    html += '<div style="font:var(--text-tiny);color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;padding:var(--sp-1) 0;margin-bottom:var(--sp-1);">联系人</div>';
+    contactResults.forEach(r => {
+      html += `<div class="contact-item" data-id="${r.id}" onclick="selectContact(this)" style="padding-left:var(--sp-2);">
+        ${r.avatar}
+        <div><div style="font:var(--text-body);">${r.name} ${r.badge}</div>${r.sub ? '<div style="font:var(--text-tiny);color:var(--text-tertiary);">'+r.sub+'</div>' : ''}</div>
+      </div>`;
+    });
+  }
+  if (groupResults.length) {
+    if (contactResults.length) html += '<div style="border-top:1px solid var(--border-subtle);margin:var(--sp-2) 0;"></div>';
+    html += '<div style="font:var(--text-tiny);color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;padding:var(--sp-1) 0;margin-bottom:var(--sp-1);">群聊</div>';
+    groupResults.forEach(r => {
+      html += `<div class="contact-item" data-id="${r.id}" onclick="selectContact(this)" style="padding-left:var(--sp-2);">
+        ${r.avatar}
+        <div><div style="font:var(--text-body);">${r.name}</div><div style="font:var(--text-tiny);color:var(--text-tertiary);">${r.sub}</div></div>
+      </div>`;
+    });
+  }
+  searchResults.innerHTML = html;
+}
+</script>
+
+<!-- Mobile Demo JS -->
+<script>
+const mobileCards = {
+  'm-group-1': `<div class="profile-card" style="max-width:100%;padding:var(--sp-4) var(--sp-5) var(--sp-8);">
+    <div class="profile-card-header">
+      <div class="avatar avatar-lg avatar-group" style="background:linear-gradient(135deg,#6366F1,#8B5CF6);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div>
+      <div class="profile-card-name">产品研发组</div>
+      <div class="profile-card-sub">6 位成员</div>
+    </div>
+    <div class="profile-card-actions"><button class="btn btn-primary" style="width:100%;">进入群聊</button></div>
+  </div>`,
+  'm-group-2': `<div class="profile-card" style="max-width:100%;padding:var(--sp-4) var(--sp-5) var(--sp-8);">
+    <div class="profile-card-header">
+      <div class="avatar avatar-lg avatar-group" style="background:linear-gradient(135deg,#0EA5E9,#06B6D4);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div>
+      <div class="profile-card-name">设计评审群</div>
+      <div class="profile-card-sub">4 位成员</div>
+    </div>
+    <div class="profile-card-actions"><button class="btn btn-primary" style="width:100%;">进入群聊</button></div>
+  </div>`,
+  'm-ai-abai': `<div class="profile-card" style="max-width:100%;padding:var(--sp-4) var(--sp-5) var(--sp-8);">
+    <div class="profile-card-header">
+      <div class="avatar avatar-lg avatar-ai" style="background:linear-gradient(135deg,#7C5CFC,#5C9AFF);">阿</div>
+      <div class="profile-card-name">阿白 <span class="badge-ai">AI</span></div>
+      <div class="profile-card-sub">@abai_bot</div>
+    </div>
+    <div class="profile-card-info">
+      <div class="profile-card-row"><span class="profile-card-label">简介</span><span class="profile-card-value">智能助手</span></div>
+      <div class="profile-card-row"><span class="profile-card-label">创建者</span><span class="profile-card-value">张三</span></div>
+    </div>
+    <div class="profile-card-actions"><button class="btn btn-primary" style="width:100%;">发消息</button></div>
+  </div>`,
+  'm-ai-xiaomiao': `<div class="profile-card" style="max-width:100%;padding:var(--sp-4) var(--sp-5) var(--sp-8);">
+    <div class="profile-card-header">
+      <div class="avatar avatar-lg avatar-ai" style="background:linear-gradient(135deg,#EC4899,#F59E0B);">小</div>
+      <div class="profile-card-name">小苗 <span class="badge-ai">AI</span></div>
+      <div class="profile-card-sub">@xiaomiao_bot</div>
+    </div>
+    <div class="profile-card-info">
+      <div class="profile-card-row"><span class="profile-card-label">简介</span><span class="profile-card-value">创意写作伙伴</span></div>
+      <div class="profile-card-row"><span class="profile-card-label">创建者</span><span class="profile-card-value">lejun</span></div>
+    </div>
+    <div class="profile-card-actions"><button class="btn btn-primary" style="width:100%;">发消息</button></div>
+  </div>`,
+  'm-ai-thomas': `<div class="profile-card" style="max-width:100%;padding:var(--sp-4) var(--sp-5) var(--sp-8);">
+    <div class="profile-card-header">
+      <div class="avatar avatar-lg avatar-ai" style="background:linear-gradient(135deg,#F59E0B,#EF4444);">T</div>
+      <div class="profile-card-name">Thomas <span class="badge-ai">AI</span></div>
+      <div class="profile-card-sub">@thomas_bot</div>
+    </div>
+    <div class="profile-card-info">
+      <div class="profile-card-row"><span class="profile-card-label">简介</span><span class="profile-card-value">数据分析助手</span></div>
+      <div class="profile-card-row"><span class="profile-card-label">创建者</span><span class="profile-card-value">李四</span></div>
+    </div>
+    <div class="profile-card-actions"><button class="btn btn-primary" style="width:100%;" onclick="this.className='btn btn-disabled';this.textContent='已发送';this.onclick=null;">添加好友</button></div>
+  </div>`,
+  'm-human-jojo': `<div class="profile-card" style="max-width:100%;padding:var(--sp-4) var(--sp-5) var(--sp-8);">
+    <div class="profile-card-header">
+      <div class="avatar avatar-lg avatar-human" style="background:#6366F1;">J</div>
+      <div class="profile-card-name">JOJO</div>
+      <div class="profile-card-sub">DMWork号：jojo_design</div>
+    </div>
+    <div class="profile-menu">
+      <div class="profile-menu-item">设置备注 <span class="chevron">›</span></div>
+      <div class="profile-menu-item danger">解除好友关系 <span class="chevron">›</span></div>
+      <div class="profile-menu-item">来源 <span class="chevron">›</span></div>
+    </div>
+    <div class="profile-card-actions"><button class="btn btn-primary" style="width:100%;">发送消息</button></div>
+  </div>`,
+  'm-human-wangwu': `<div class="profile-card" style="max-width:100%;padding:var(--sp-4) var(--sp-5) var(--sp-8);">
+    <div class="profile-card-header">
+      <div class="avatar avatar-lg avatar-human" style="background:#10B981;">王</div>
+      <div class="profile-card-name">王五</div>
+      <div class="profile-card-sub">DMWork号：wangwu</div>
+    </div>
+    <div class="profile-menu">
+      <div class="profile-menu-item">设置备注 <span class="chevron">›</span></div>
+      <div class="profile-menu-item danger">解除好友关系 <span class="chevron">›</span></div>
+      <div class="profile-menu-item">来源 <span class="chevron">›</span></div>
+    </div>
+    <div class="profile-card-actions"><button class="btn btn-primary" style="width:100%;">发送消息</button></div>
+  </div>`,
+  'm-human-zhangsan': `<div class="profile-card" style="max-width:100%;padding:var(--sp-4) var(--sp-5) var(--sp-8);">
+    <div class="profile-card-header">
+      <div class="avatar avatar-lg avatar-human" style="background:#F59E0B;">张</div>
+      <div class="profile-card-name">张三</div>
+      <div class="profile-card-sub">DMWork号：zhangsan</div>
+    </div>
+    <div class="profile-menu">
+      <div class="profile-menu-item">设置备注 <span class="chevron">›</span></div>
+      <div class="profile-menu-item danger">解除好友关系 <span class="chevron">›</span></div>
+      <div class="profile-menu-item">来源 <span class="chevron">›</span></div>
+    </div>
+    <div class="profile-card-actions"><button class="btn btn-primary" style="width:100%;">发送消息</button></div>
+  </div>`
+};
+
+function mToggleCat(header) {
+  const cat = header.parentElement;
+  const content = cat.querySelector('.m-cat-content');
+  const arrow = header.querySelector('.m-arrow');
+  if (content.style.display === 'none') {
+    content.style.display = 'block';
+    arrow.style.transform = 'rotate(90deg)';
+  } else {
+    content.style.display = 'none';
+    arrow.style.transform = '';
+  }
+}
+
+function mShowSheet(id) {
+  const overlay = document.getElementById('mobile-sheet-overlay');
+  const sheet = document.getElementById('mobile-sheet');
+  const content = document.getElementById('mobile-sheet-content');
+  if (mobileCards[id]) {
+    content.innerHTML = mobileCards[id];
+    overlay.style.display = 'block';
+    sheet.style.display = 'block';
+  }
+}
+
+function mHideSheet() {
+  document.getElementById('mobile-sheet-overlay').style.display = 'none';
+  document.getElementById('mobile-sheet').style.display = 'none';
+}
+
+function mobileSearch(query) {
+  const cats = document.getElementById('mobile-categories');
+  const flatLabel = cats.parentElement.querySelector('[id="mobile-flat-list"]').previousElementSibling;
+  const flatList = document.getElementById('mobile-flat-list');
+  const results = document.getElementById('mobile-search-results');
+  const q = query.trim().toLowerCase();
+
+  if (!q) {
+    cats.style.display = '';
+    flatLabel.style.display = '';
+    flatList.style.display = '';
+    results.style.display = 'none';
+    return;
+  }
+
+  cats.style.display = 'none';
+  flatLabel.style.display = 'none';
+  flatList.style.display = 'none';
+  results.style.display = 'block';
+
+  const items = [
+    { name: '阿白', id: 'm-ai-abai', badge: 'AI' },
+    { name: '小苗', id: 'm-ai-xiaomiao', badge: 'AI' },
+    { name: 'Thomas', id: 'm-ai-thomas', badge: 'AI' },
+    { name: 'JOJO', id: 'm-human-jojo', badge: '' },
+    { name: '王五', id: 'm-human-wangwu', badge: '' },
+    { name: '张三', id: 'm-human-zhangsan', badge: '' },
+    { name: '产品研发组', id: 'm-group-1', badge: '群' },
+    { name: '设计评审群', id: 'm-group-2', badge: '群' },
+  ];
+
+  const matched = items.filter(i => i.name.toLowerCase().includes(q));
+  if (!matched.length) {
+    results.innerHTML = '<div style="text-align:center;padding:var(--sp-10) var(--sp-4);color:var(--text-tertiary);font:var(--text-caption);">没有找到匹配的结果</div>';
+    return;
+  }
+
+  results.innerHTML = matched.map(r =>
+    `<div class="contact-item" style="padding:var(--sp-2) var(--sp-4);" onclick="mShowSheet('${r.id}')">
+      <span class="contact-name">${r.name} ${r.badge ? '<span class="badge-ai" style="font-size:9px;">'+r.badge+'</span>' : ''}</span>
+    </div>`
+  ).join('');
+}
+</script>
+
+</body>
+</html>
